@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>ROMAN: Guardiã das Estrelas (Versão Expandida)</title>
+<title>ROMAN: Guardiã das Estrelas (Versão Mobile Otimizada)</title>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#efe2c2;--ink:#1d1a2e;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -73,6 +73,103 @@ let t=0,shake=0,hs=0,tip='',tipT=0,hits=0,clock=0,tm=0,eclipse=0,combo=false,har
 let isTouch = false;
 const stars=[];for(let i=0;i<110;i++)stars.push({x:Math.random()*W,y:Math.random()*H,z:Math.random()*2.5+.5});
 const V=X.createRadialGradient(W/2,H/2,H*.45,W/2,H/2,H*1.0);V.addColorStop(0,'rgba(0,0,0,0)');V.addColorStop(1,'rgba(8,4,20,.65)');
+
+// Touch & Analog Joystick State
+let joyTouchId = null;
+const joyBase = {x: 130, y: H - 130, r: 68};
+const joyStick = {x: 130, y: H - 130};
+const touchBtns = {
+  fire: {x: W - 100, y: H - 105, r: 42, label: 'TIRO', k: 'KeyJ'},
+  mode: {x: W - 195, y: H - 145, r: 36, label: 'MODO', k: 'KeyK'},
+  spec: {x: W - 100, y: H - 200, r: 36, label: 'ESPECIAL', k: 'KeyL'}
+};
+const touchState = {KeyW:0, KeyS:0, KeyA:0, KeyD:0, KeyJ:0, KeyK:0, KeyL:0, Enter:0};
+
+function updateTouches(e){
+  isTouch = true; initAudio();
+  const rect = C.getBoundingClientRect();
+  const scaleX = W / rect.width, scaleY = H / rect.height;
+
+  const currentKeys = {KeyW:false, KeyS:false, KeyA:false, KeyD:false, KeyJ:false, KeyK:false, KeyL:false, Enter:false};
+  let joyActive = false;
+
+  for(let i=0; i<e.touches.length; i++){
+    const touch = e.touches[i];
+    const tx = (touch.clientX - rect.left) * scaleX;
+    const ty = (touch.clientY - rect.top) * scaleY;
+
+    // Lado Esquerdo: Analógico dinâmico de arrasto
+    if(touch.identifier === joyTouchId || (joyTouchId === null && tx < W * 0.45)){
+      joyTouchId = touch.identifier;
+      joyActive = true;
+
+      const dx = tx - joyBase.x;
+      const dy = ty - joyBase.y;
+      const dist = Math.hypot(dx, dy);
+      const maxR = joyBase.r;
+
+      if(dist > maxR){
+        joyStick.x = joyBase.x + (dx / dist) * maxR;
+        joyStick.y = joyBase.y + (dy / dist) * maxR;
+      } else {
+        joyStick.x = tx;
+        joyStick.y = ty;
+      }
+
+      // Detecção suave de direção por limite de distância
+      if(dx < -14) currentKeys.KeyA = true;
+      if(dx > 14) currentKeys.KeyD = true;
+      if(dy < -14) currentKeys.KeyW = true;
+      if(dy > 14) currentKeys.KeyS = true;
+    }
+    // Lado Direito: Botões de Ação ampliados e elevados
+    else if(tx >= W * 0.45){
+      if(scene !== 'play') currentKeys.Enter = true;
+
+      for(const bKey in touchBtns){
+        const btn = touchBtns[bKey];
+        if(Math.hypot(tx - btn.x, ty - btn.y) <= btn.r + 18){
+          currentKeys[btn.k] = true;
+        }
+      }
+    }
+  }
+
+  if(!joyActive){
+    joyTouchId = null;
+    joyStick.x = joyBase.x;
+    joyStick.y = joyBase.y;
+  }
+
+  // Sincroniza estado de touch com a tabela global de entradas K
+  for(const k in currentKeys){
+    const pressed = currentKeys[k];
+    if(pressed){
+      if(!K[k]) K[k] = 2;
+      else if(K[k] === 2) K[k] = 1;
+      touchState[k] = 1;
+    } else if(touchState[k]){
+      K[k] = 0;
+      touchState[k] = 0;
+    }
+  }
+}
+
+['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(evt => {
+  addEventListener(evt, e => {
+    e.preventDefault();
+    if(e.touches.length === 0){
+      joyTouchId = null;
+      joyStick.x = joyBase.x;
+      joyStick.y = joyBase.y;
+      for(const k in touchState){
+        if(touchState[k]){ K[k] = 0; touchState[k] = 0; }
+      }
+    } else {
+      updateTouches(e);
+    }
+  }, {passive: false});
+});
 
 function start(n,h){
   hard=h;nP=n;P=[];
@@ -299,18 +396,47 @@ function drawB(){
 
 function drawTouchOverlay(){
   if(!isTouch)return;
-  X.save();X.globalAlpha=0.35;X.lineWidth=3;X.strokeStyle='#efe2c2';X.fillStyle='#efe2c2';
-  const cx=100, cy=H-100;
-  X.beginPath();X.arc(cx,cy,55,0,7);X.stroke();
-  T('▲',cx,cy-25,20,'#efe2c2','center');
-  T('▼',cx,cy+35,20,'#efe2c2','center');
-  T('◄',cx-30,cy+7,20,'#efe2c2','center');
-  T('►',cx+30,cy+7,20,'#efe2c2','center');
+  X.save();
 
-  const bx=W-100, by=H-100;
-  X.beginPath();X.arc(bx,by+20,28,0,7);X.stroke();T('TIRO',bx,by+26,12,'#efe2c2','center');
-  X.beginPath();X.arc(bx-55,by-10,24,0,7);X.stroke();T('MODO',bx-55,by-5,11,'#efe2c2','center');
-  X.beginPath();X.arc(bx,by-50,24,0,7);X.stroke();T('ESPECIAL',bx,by-45,9,'#efe2c2','center');
+  // Dynamic & Smooth Analog Joystick Base
+  X.globalAlpha = 0.3;
+  X.lineWidth = 4;
+  X.strokeStyle = '#efe2c2';
+  X.fillStyle = 'rgba(239,226,194,0.08)';
+  X.beginPath();
+  X.arc(joyBase.x, joyBase.y, joyBase.r, 0, Math.PI * 2);
+  X.fill();
+  X.stroke();
+
+  // Joystick Stick Head (Pino de arrasto)
+  X.globalAlpha = 0.65;
+  X.fillStyle = '#8be8ff';
+  X.strokeStyle = '#efe2c2';
+  X.lineWidth = 3;
+  X.beginPath();
+  X.arc(joyStick.x, joyStick.y, 28, 0, Math.PI * 2);
+  X.fill();
+  X.stroke();
+
+  // Enlarged and Lifted Action Buttons
+  for(const bKey in touchBtns){
+    const btn = touchBtns[bKey];
+    const isPressed = touchState[btn.k];
+
+    X.globalAlpha = isPressed ? 0.75 : 0.38;
+    X.fillStyle = isPressed ? '#ff9a47' : 'rgba(20,12,40,0.6)';
+    X.strokeStyle = '#efe2c2';
+    X.lineWidth = 3.5;
+
+    X.beginPath();
+    X.arc(btn.x, btn.y, btn.r, 0, Math.PI * 2);
+    X.fill();
+    X.stroke();
+
+    X.globalAlpha = 0.95;
+    T(btn.label, btn.x, btn.y + 5, Math.floor(btn.r * 0.32), '#efe2c2', 'center');
+  }
+
   X.restore();
 }
 
@@ -397,7 +523,7 @@ function hud(){
     let y=WR('“Aqui é Nancy Grace Roman. Em 1960 virei a primeira astrônoma-chefe da NASA e briguei por telescópios no espaço, acima do ar que borra as estrelas. O Hubble foi a prova. Mas o espelho dele nasceu com um defeito e as imagens saíram borradas. Ajude a deixar tudo nítido!”',100,145,W-200,26,20);
     y=WR('Destrua asteroides para obter itens de ciência (Espectrômetro, Microlente e Painel Solar). Pegue 5 orbes para o Coronógrafo!',100,y+8,W-200,24,17,'#ff9ad9');
     y+=4;
-    if(nP==1){T('Mover: WASD, Setas, Analógico ou Touch',100,y+10,16,'#8be8ff');T('Atirar: J, Espaço ou A / RT',100,y+36,16,'#8be8ff');T('Trocar Hubble/Roman: K ou X / LT',100,y+62,16,'#8be8ff');T('Coronógrafo: L ou Y / B',100,y+88,16,'#8be8ff')}
+    if(nP==1){T('Mover: WASD, Setas, Analógico ou Touch (Arrasto)',100,y+10,16,'#8be8ff');T('Atirar: J, Espaço ou A / RT',100,y+36,16,'#8be8ff');T('Trocar Hubble/Roman: K ou X / LT',100,y+62,16,'#8be8ff');T('Coronógrafo: L ou Y / B',100,y+88,16,'#8be8ff')}
     else{T('P1 (laranja): WASD, J atira, K troca, L coronógrafo',100,y+10,16,'#ff9a47');T('P2 (verde): setas, vírgula atira, ponto troca, barra coronógrafo',100,y+36,16,'#4fd8c4');T('Controles: Analógico move, A atira, X troca, Y ataca!',100,y+62,16,'#8be8ff')}
     T('ENTER, START ou toque para começar',W/2,H-72,24,'#ffe08a','center');return}
   if(scene=='ready'){T('PREPARAR…',W/2,H/2-10,70,'#ffe08a','center');if(tm<.8)T('OBSERVAR!',W/2,H/2+70,80,'#ff9a47','center');return}
@@ -426,31 +552,6 @@ function hud(){
     T('ENTER ou START para voltar',W/2,H-72,20,'#ffe08a','center')}
   if(scene=='lose'){panel();T('IMAGEM BORRADA…',W/2,215,50,'#ff5a6a','center');T('A Aberração venceu desta vez.',W/2,265,20,'#efe2c2','center');T('ENTER ou START para tentar de novo',W/2,340,24,'#ffe08a','center')}
 }
-
-addEventListener('touchstart', e=>{
-  isTouch=true; initAudio();
-  const rect=C.getBoundingClientRect(), scaleX=W/rect.width, scaleY=H/rect.height;
-  for(let i=0; i<e.touches.length; i++){
-    const t=e.touches[i], tx=(t.clientX-rect.left)*scaleX, ty=(t.clientY-rect.top)*scaleY;
-    if(tx < W/2){
-      if(ty < H-110) K.KeyW=2;
-      else if(ty > H-60) K.KeyS=2;
-      if(tx < 80) K.KeyA=2;
-      else if(tx > 120) K.KeyD=2;
-    }else{
-      if(ty > H-100 && tx > W-130) K.KeyJ=2;
-      else if(tx < W-110 && ty < H-60) K.KeyK=2;
-      else if(ty < H-100) K.KeyL=2;
-      if(scene!=='play') K.Enter=2;
-    }
-  }
-});
-
-addEventListener('touchend', e=>{
-  if(e.touches.length===0){
-    K.KeyW=0;K.KeyS=0;K.KeyA=0;K.KeyD=0;K.KeyJ=0;K.KeyK=0;K.KeyL=0;K.Enter=0;
-  }
-});
 
 let gpPrev=[{},{}];
 function pollGP(){
