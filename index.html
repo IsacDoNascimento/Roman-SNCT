@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>ROMAN: Guardiã das Estrelas (Versão Mobile Otimizada)</title>
+<title>ROMAN: Guardiã das Estrelas (Versão Mobile Otimizada v4)</title>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#efe2c2;--ink:#1d1a2e;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -76,12 +76,14 @@ const V=X.createRadialGradient(W/2,H/2,H*.45,W/2,H/2,H*1.0);V.addColorStop(0,'rg
 
 // Touch & Analog Joystick State
 let joyTouchId = null;
-const joyBase = {x: 130, y: H - 130, r: 68};
-const joyStick = {x: 130, y: H - 130};
+const joyBase = {x: 130, y: H - 145, r: 72};
+const joyStick = {x: 130, y: H - 145};
+
+// Botões ampliados (raio maior) e elevados (Y menor)
 const touchBtns = {
-  fire: {x: W - 100, y: H - 105, r: 42, label: 'TIRO', k: 'KeyJ'},
-  mode: {x: W - 195, y: H - 145, r: 36, label: 'MODO', k: 'KeyK'},
-  spec: {x: W - 100, y: H - 200, r: 36, label: 'ESPECIAL', k: 'KeyL'}
+  fire: {x: W - 110, y: H - 125, r: 48, label: 'TIRO', k: 'KeyJ'},
+  mode: {x: W - 220, y: H - 175, r: 42, label: 'MODO', k: 'KeyK'},
+  spec: {x: W - 110, y: H - 235, r: 42, label: 'ESPECIAL', k: 'KeyL'}
 };
 const touchState = {KeyW:0, KeyS:0, KeyA:0, KeyD:0, KeyJ:0, KeyK:0, KeyL:0, Enter:0};
 
@@ -128,7 +130,7 @@ function updateTouches(e){
 
       for(const bKey in touchBtns){
         const btn = touchBtns[bKey];
-        if(Math.hypot(tx - btn.x, ty - btn.y) <= btn.r + 18){
+        if(Math.hypot(tx - btn.x, ty - btn.y) <= btn.r + 20){
           currentKeys[btn.k] = true;
         }
       }
