@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>ROMAN: Guardiã das Estrelas (Modo Versus v5)</title>
+<title>ROMAN: Guardiã das Estrelas (Modo Versus v6)</title>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#efe2c2;--ink:#1d1a2e;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -155,14 +155,14 @@ function updateCombo(p, hitSuccess){
 
 function start(n,h){
   hard=h; nP=n; P=[];
-  const numPlayers = (n === 3) ? 2 : n; // Mode 3 = Versus (2 Players)
+  const numPlayers = (n === 3) ? 2 : n; // Mode 3 = Versus (2 Players em tela única)
   for(let i=0;i<numPlayers;i++){
     P.push({
-      i, x:110, y:H/2+(numPlayers>1?(i?80:-80):0), hp:3, mode:0, cd:0, inv:0, ex:0, alive:1,
+      i, x:110, y:H/2+(numPlayers>1?(i?70:-70):0), hp:3, mode:0, cd:0, inv:0, ex:0, alive:1,
       col:i?'#4fd8c4':'#ff9a47', boost:0, shield:0, score:0, streak:0, multiplier:1.0
     });
   }
-  B={x:W-210,y:H/2,r:92,hp:720,max:720,t:0,ph:1,c1:1.5,c2:1,c3:2,c4:2,c5:3.5,spin:0,stun:0,hit:0,open:0,targetP:0};
+  B={x:W-210,y:H/2,r:92,hp:720,max:720,t:0,ph:1,c1:1.5,c2:1,c3:2,c4:2,c5:3.5,spin:0,stun:0,hit:0,open:0};
   bul=[];sh=[];pk=[];pt=[];asteroids=[];pwItems=[];hits=0;clock=0;eclipse=0;winnerText='';scene='intro';
 }
 
@@ -218,11 +218,7 @@ function upP(p,dt){
 function tgt(){
   const aliveP = P.filter(p=>p.alive);
   if(!aliveP.length) return 0;
-  // Aggro no Versus: ataca o jogador com maior pontuação ou o mais próximo
-  let p = aliveP[0];
-  if(nP === 3 && aliveP.length > 1){
-    p = (aliveP[0].score >= aliveP[1].score) ? aliveP[0] : aliveP[1];
-  }
+  let p = aliveP[Math.random()*aliveP.length|0];
   return Math.atan2(p.y-B.y,p.x-B.x);
 }
 
@@ -362,7 +358,7 @@ function step(dt){
       }
 
       if(B.hp<=0 && s.pOwner){
-        // K.O. Bonus de +2000 pontos para o golpe final!
+        // K.O. Bonus de +2000 pontos para quem der o golpe final
         addScore(s.pOwner, 2000, 'K.O. Bonus');
       }
       return false;
@@ -483,53 +479,12 @@ function draw(){
   X.setTransform(1,0,0,1,0,0); X.clearRect(0,0,W,H);
   X.save(); if(shake>0) X.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);
 
-  if(nP === 3 && (scene==='play' || scene==='ready')){
-    // RENDERIZAÇÃO EM TELA DIVIDIDA (SPLIT SCREEN)
-    // LADO ESQUERDO: P1 VIEWPORT (0 a 476 px)
-    X.save();
-    X.beginPath(); X.rect(0, 0, 476, H); X.clip();
-    bg();
-    // Câmera transladada acompanhando P1
-    const p1 = P[0] || {x: W/2, y: H/2};
-    const cam1X = cl(238 - p1.x, -200, 0);
-    const cam1Y = cl(270 - p1.y, -100, 100);
-    X.save(); X.translate(cam1X, cam1Y);
+  // RENDERIZAÇÃO TELA ÚNICA COMPARTILHADA (MESMO ESTILO DO CO-OP)
+  bg();
+  if(scene!='title'&&scene!='codex'&&scene!='mode'&&scene!='diff'&&scene!='intro'){
     renderWorldObjects();
-    pt.forEach(p=>{X.fillStyle=p.col;X.globalAlpha=cl(p.life*2,0,1);X.fillRect(p.x,p.y,p.r,p.r)});X.globalAlpha=1;
-    X.restore();
-    // HUD P1 no topo
-    T('P1 (SÃO PAULO) · PTS: '+p1.score, 15, 28, 14, '#ff9a47');
-    T('COMBO: '+p1.multiplier.toFixed(1)+'x', 15, 46, 12, '#8be8ff');
-    X.restore();
-
-    // LADO DIREITO: P2 VIEWPORT (484 a 960 px)
-    X.save();
-    X.beginPath(); X.rect(484, 0, 476, H); X.clip();
-    bg();
-    // Câmera transladada acompanhando P2
-    const p2 = P[1] || {x: W/2, y: H/2};
-    const cam2X = cl(722 - p2.x, -200, 0);
-    const cam2Y = cl(270 - p2.y, -100, 100);
-    X.save(); X.translate(cam2X, cam2Y);
-    renderWorldObjects();
-    pt.forEach(p=>{X.fillStyle=p.col;X.globalAlpha=cl(p.life*2,0,1);X.fillRect(p.x,p.y,p.r,p.r)});X.globalAlpha=1;
-    X.restore();
-    // HUD P2 no topo
-    T('P2 (PIAUÍ) · PTS: '+p2.score, 500, 28, 14, '#4fd8c4');
-    T('COMBO: '+p2.multiplier.toFixed(1)+'x', 500, 46, 12, '#8be8ff');
-    X.restore();
-
-    // LINHA DIVISÓRIA COM GLOW
-    X.strokeStyle = '#ffe08a'; X.lineWidth = 6;
-    X.beginPath(); X.moveTo(W/2, 0); X.lineTo(W/2, H); X.stroke();
-  } else {
-    // RENDERIZAÇÃO TELA CHEIA PADRÃO (SOLO / CO-OP)
-    bg();
-    if(scene!='title'&&scene!='codex'&&scene!='mode'&&scene!='diff'&&scene!='intro'){
-      renderWorldObjects();
-    }
-    pt.forEach(p=>{X.fillStyle=p.col;X.globalAlpha=cl(p.life*2,0,1);X.fillRect(p.x,p.y,p.r,p.r)});X.globalAlpha=1;
   }
+  pt.forEach(p=>{X.fillStyle=p.col;X.globalAlpha=cl(p.life*2,0,1);X.fillRect(p.x,p.y,p.r,p.r)});X.globalAlpha=1;
 
   X.restore();
 
@@ -566,8 +521,8 @@ function hud(){
     T('2 (Y/B) · CO-OP (2 JOGADORES)',W/2,285,32,'#ff9a47','center');
     T('Jogue em dupla cooperativa! Alinhem-se para disparar o tiro combinado.',W/2,315,15,'#efe2c2','center','Georgia,serif');
     
-    T('3 (V/X) · VERSUS (SPLIT SCREEN)',W/2,385,32,'#ff5a6a','center');
-    T('Disputa compétitiva na mesma arena! Tela dividida com placar e multiplicador de combo.',W/2,415,15,'#efe2c2','center','Georgia,serif');
+    T('3 (V/X) · VERSUS (MESMA TELA)',W/2,385,32,'#ff5a6a','center');
+    T('Mesma arena do Co-op, mas com disputa de pontos individual! Quem fizer mais vence.',W/2,415,15,'#efe2c2','center','Georgia,serif');
     
     T('ESC ou SELECT para voltar ao menu',W/2,485,16,'#efe2c2','center','Georgia,serif');
     return;
@@ -580,16 +535,16 @@ function hud(){
     T('Três fases: o chefe fica nítido, com espiral e rajadas furiosas.',W/2,392,17,'#efe2c2','center','Georgia,serif');
     T('ESC ou SELECT para voltar',W/2,465,16,'#efe2c2','center','Georgia,serif');return}
   if(scene=='title'){
-    T('ROMAN',W/2,195,120,'#ffb15c','center');T('Guardiã das Estrelas (Versão 3 - Versus)',W/2,255,28,'#efe2c2','center');
+    T('ROMAN',W/2,195,120,'#ffb15c','center');T('Guardiã das Estrelas (Versão Versus Tela Única)',W/2,255,26,'#efe2c2','center');
     T('Pressione ENTER / ESPAÇO / START para Iniciar',W/2,335,22,'#8be8ff','center');
     T('Pressione C para o CODEX CIENTÍFICO DA NASA',W/2,375,18,'#ffd34d','center');
-    X.font='16px Georgia,serif';X.textAlign='center';X.fillStyle='#efe2c2';X.fillText('Protótipo Expandido · jogue Solo, Co-op ou Versus em Split Screen',W/2,435);
+    X.font='16px Georgia,serif';X.textAlign='center';X.fillStyle='#efe2c2';X.fillText('Protótipo Expandido · Solo, Co-op ou Modo Versus na mesma tela',W/2,435);
     return;
   }
   if(scene=='intro'){
-    panel();T(nP===3?'MODO VERSUS · TELA DIVIDIDA':'FASE 1 · HUBBLE, 1990',100,105,28,'#ffb15c');
+    panel();T(nP===3?'MODO VERSUS (TELA ÚNICA)':'FASE 1 · HUBBLE, 1990',100,105,28,'#ffb15c');
     let y=WR(nP===3?
-      '“Bem-vindos ao Modo Versus! Ambos os navegadores competirão lado a lado na mesma arena estelar. Quem acumular a maior pontuação através de acertos, combos e o K.O. Bonus de 2.000 pontos será o campeão!”':
+      '“Bem-vindos ao Modo Versus na mesma tela! Vocês jogam juntos na mesma arena como no Co-op, mas a pontuação é individual. Quem somar mais pontos destruindo asteroides, acertando o chefe e conseguindo o K.O. Bonus de 2.000 pontos será o vencedor!”':
       '“Aqui é Nancy Grace Roman. Em 1960 virei a primeira astrônoma-chefe da NASA e briguei por telescópios no espaço, acima do ar que borra as estrelas. O Hubble foi a prova. Mas o espelho dele nasceu com um defeito e as imagens saíram borradas. Ajude a deixar tudo nítido!”',
       100,145,W-200,26,18);
     y=WR('Destrua asteroides para obter itens de ciência (Espectrômetro, Microlente e Painel Solar). Pegue 5 orbes para o Coronógrafo!',100,y+8,W-200,24,16,'#ff9ad9');
@@ -598,23 +553,24 @@ function hud(){
     else{
       T('P1 (Laranja): WASD (Mover), J/Espaço (Atirar), K (Trocar), L (Especial)',100,y+10,15,'#ff9a47');
       T('P2 (Verde): Setas (Mover), Vírgula/Numpad0 (Atirar), Ponto/Numpad. (Trocar), Enter (Especial)',100,y+34,15,'#4fd8c4');
-      T('Sistema de Pontos: Dano +100 | Asteroide +200 | K.O. Bonus +2000 | Dano -150',100,y+58,15,'#ffd34d');
+      T('Pontos: Dano +100 | Asteroide +200 | K.O. Bonus +2000 | Combo (1.5x, 2x, 3x)',100,y+58,15,'#ffd34d');
     }
     T('ENTER, START ou toque para começar',W/2,H-72,22,'#ffe08a','center');return;
   }
   if(scene=='ready'){T('PREPARAR…',W/2,H/2-10,70,'#ffe08a','center');if(tm<.8)T('OBSERVAR!',W/2,H/2+70,80,'#ff9a47','center');return}
   
-  if(nP !== 3){
-    P.forEach((p,i)=>{
-      const y=34+i*52,c=p.col;T('P'+(i+1),18,y,18,c);
-      X.font='20px Georgia,serif';X.fillStyle=p.alive?'#ff5a6a':'#777';X.textAlign='left';X.fillText(p.alive?'♥'.repeat(p.hp):'✖',64,y);
-      for(let k=0;k<5;k++){X.fillStyle=k<p.ex?'#ff7ad9':'rgba(255,255,255,.2)';X.fillRect(18+k*16,y+8,12,8)}
-      T(p.mode?'ROMAN':'HUBBLE',100+0,y+24,12,'#efe2c2');
-      if(p.boost>0) T('SPEED!', 160, y+24, 11, '#8be8ff');
-      if(p.shield>0) T('SHIELD!', 215, y+24, 11, '#ffd34d');
-      T('PTS: '+p.score, 280, y+24, 12, '#ffd34d');
-    });
-  }
+  // HUD EM JOGO (SOLO, CO-OP E VERSUS)
+  P.forEach((p,i)=>{
+    const y=34+i*52,c=p.col;T('P'+(i+1),18,y,18,c);
+    X.font='20px Georgia,serif';X.fillStyle=p.alive?'#ff5a6a':'#777';X.textAlign='left';X.fillText(p.alive?'♥'.repeat(p.hp):'✖',64,y);
+    for(let k=0;k<5;k++){X.fillStyle=k<p.ex?'#ff7ad9':'rgba(255,255,255,.2)';X.fillRect(18+k*16,y+8,12,8)}
+    T(p.mode?'ROMAN':'HUBBLE',100+0,y+24,12,'#efe2c2');
+    if(p.boost>0) T('SPEED!', 160, y+24, 11, '#8be8ff');
+    if(p.shield>0) T('SHIELD!', 215, y+24, 11, '#ffd34d');
+    
+    // EXIBE PONTUAÇÃO E MULTIPLICADOR DE COMBO
+    T('PTS: '+p.score+' ('+p.multiplier.toFixed(1)+'x)', 270, y+24, 12, '#ffd34d');
+  });
 
   if(combo)T('ALINHADOS! TIRO COMBINADO DE ALTO DANO',W/2,H-60,18,'#8be8ff','center');
   const bw=380,bx=W/2-bw/2+70;X.fillStyle='rgba(0,0,0,.5)';X.fillRect(bx,16,bw,14);X.fillStyle='#ff9a47';X.fillRect(bx,16,bw*cl(B.hp/B.max,0,1),14);X.strokeStyle='#efe2c2';X.lineWidth=2;X.strokeRect(bx,16,bw,14);
@@ -626,14 +582,14 @@ function hud(){
     if(nP === 3){
       T('RESULTADO DO MODO VERSUS',W/2,105,32,'#ffb15c','center');
       T(winnerText,W/2,155,28,'#8be8ff','center');
-      T('PLACAR FINAL:',W/2,205,20,'#ffd34d','center');
-      T('Jogador 1: '+(P[0]?P[0].score:0)+' PONTOS',W/2,245,22,'#ff9a47','center');
-      T('Jogador 2: '+(P[1]?P[1].score:0)+' PONTOS',W/2,285,22,'#4fd8c4','center');
+      T('PLACAR FINAL DA ARENA:',W/2,205,20,'#ffd34d','center');
+      T('Jogador 1 (Laranja): '+(P[0]?P[0].score:0)+' PONTOS',W/2,245,22,'#ff9a47','center');
+      T('Jogador 2 (Verde): '+(P[1]?P[1].score:0)+' PONTOS',W/2,285,22,'#4fd8c4','center');
       T('Pressione ENTER para voltar ao menu',W/2,H-70,20,'#ffe08a','center');
     } else {
       T(scene==='win'?'IMAGEM NÍTIDA!':'IMAGEM BORRADA…',W/2,115,44,scene==='win'?'#ffb15c':'#ff5a6a','center');
       const g=hits==0&&clock<80?'S':hits<=2?'A':'B';
-      T('Nota '+g+' · Pontuação: '+(P[0]?P[0].score:0),W/2,170,28,'#8be8ff','center');
+      T('Nota '+g+' · Pontuação Total: '+(P[0]?P[0].score:0),W/2,170,28,'#8be8ff','center');
       let y=WR('Carta Estelar: O telescópio Roman investiga a energia escura e exoplanetas com um campo de visão 100 vezes maior que o Hubble.',100,215,W-200,24,18);
       T('ENTER para voltar',W/2,H-70,20,'#ffe08a','center');
     }
