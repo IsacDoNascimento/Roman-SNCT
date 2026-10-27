@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>ROMAN: Guardiã das Estrelas (Modo Versus v6)</title>
+<title>ROMAN: Guardiã das Estrelas</title>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#efe2c2;--ink:#1d1a2e;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -292,7 +292,7 @@ function step(dt){
   pk.forEach(o=>{o.x+=o.vx*dt;o.y+=o.vy*dt});pk=pk.filter(o=>o.x>-30);
 
   pwItems.forEach(pw=>{pw.x+=pw.vx*dt;pw.y+=pw.vy*dt});
-  pwItems=pwItems.filter(pw=>pw.x>-30);
+  pwItems=pwItems.filter(pw=>{pw.x>-30});
 
   P.forEach(p=>{
     if(!p.alive||p.inv>0)return;
@@ -538,7 +538,7 @@ function hud(){
     T('ROMAN',W/2,195,120,'#ffb15c','center');T('Guardiã das Estrelas',W/2,255,26,'#efe2c2','center');
     T('Pressione ENTER / ESPAÇO / START para Iniciar',W/2,335,22,'#8be8ff','center');
     T('Pressione C para o CODEX CIENTÍFICO DA NASA',W/2,375,18,'#ffd34d','center');
-    X.font='16px Georgia,serif';X.textAlign='center';X.fillStyle='#efe2c2';X.fillText('Versão 2.2',W/2,435);
+    X.font='16px Georgia,serif';X.textAlign='center';X.fillStyle='#efe2c2';X.fillText('Versão 2.1',W/2,435);
     return;
   }
   if(scene=='intro'){
