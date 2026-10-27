@@ -72,6 +72,7 @@ let scene='title',nP=1,P=[],B,bul=[],sh=[],pk=[],pt=[],asteroids=[],pwItems=[],f
 let t=0,shake=0,hs=0,tip='',tipT=0,hits=0,clock=0,tm=0,eclipse=0,combo=false,hard=1;
 let isTouch = false;
 let winnerText = '';
+let finalBossTimeStr = '';
 
 const stars=[];for(let i=0;i<110;i++)stars.push({x:Math.random()*W,y:Math.random()*H,z:Math.random()*2.5+.5});
 const V=X.createRadialGradient(W/2,H/2,H*.45,W/2,H/2,H*1.0);V.addColorStop(0,'rgba(0,0,0,0)');V.addColorStop(1,'rgba(8,4,20,.65)');
@@ -153,9 +154,15 @@ function updateCombo(p, hitSuccess){
   }
 }
 
+function fmtTime(sec){
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return (m > 0 ? m + 'm ' : '') + s + 's';
+}
+
 function start(n,h){
   hard=h; nP=n; P=[];
-  const numPlayers = (n === 3) ? 2 : n; // Mode 3 = Versus (2 Players em tela única)
+  const numPlayers = (n === 3) ? 2 : n; // Mode 3 = Versus
   for(let i=0;i<numPlayers;i++){
     P.push({
       i, x:110, y:H/2+(numPlayers>1?(i?70:-70):0), hp:3, mode:0, cd:0, inv:0, ex:0, alive:1,
@@ -163,7 +170,7 @@ function start(n,h){
     });
   }
   B={x:W-210,y:H/2,r:92,hp:720,max:720,t:0,ph:1,c1:1.5,c2:1,c3:2,c4:2,c5:3.5,spin:0,stun:0,hit:0,open:0};
-  bul=[];sh=[];pk=[];pt=[];asteroids=[];pwItems=[];hits=0;clock=0;eclipse=0;winnerText='';scene='intro';
+  bul=[];sh=[];pk=[];pt=[];asteroids=[];pwItems=[];hits=0;clock=0;eclipse=0;winnerText='';finalBossTimeStr='';scene='intro';
 }
 
 function inp(p,k,held){
@@ -368,6 +375,7 @@ function step(dt){
 
   if(B.hp<=0){
     scene='win'; bul=[]; pk=[]; sh=[]; asteroids=[]; pwItems=[]; boom(B.x,B.y,'#ffe08a',90); shake=24; snd(60,.8,'sawtooth',.12,-30);
+    finalBossTimeStr = fmtTime(clock);
     if(nP === 3){
       const p1Score = P[0] ? P[0].score : 0;
       const p2Score = P[1] ? P[1].score : 0;
@@ -378,6 +386,7 @@ function step(dt){
   }
   else if(P.every(p=>!p.alive)){
     scene='lose'; snd(70,.7,'sawtooth',.1,-30);
+    finalBossTimeStr = fmtTime(clock);
     if(nP === 3){
       const p1Score = P[0] ? P[0].score : 0;
       const p2Score = P[1] ? P[1].score : 0;
@@ -479,7 +488,6 @@ function draw(){
   X.setTransform(1,0,0,1,0,0); X.clearRect(0,0,W,H);
   X.save(); if(shake>0) X.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);
 
-  // RENDERIZAÇÃO TELA ÚNICA COMPARTILHADA (MESMO ESTILO DO CO-OP)
   bg();
   if(scene!='title'&&scene!='codex'&&scene!='mode'&&scene!='diff'&&scene!='intro'){
     renderWorldObjects();
@@ -538,7 +546,7 @@ function hud(){
     T('ROMAN',W/2,195,120,'#ffb15c','center');T('Guardiã das Estrelas',W/2,255,26,'#efe2c2','center');
     T('Pressione ENTER / ESPAÇO / START para Iniciar',W/2,335,22,'#8be8ff','center');
     T('Pressione C para o CODEX CIENTÍFICO DA NASA',W/2,375,18,'#ffd34d','center');
-    X.font='16px Georgia,serif';X.textAlign='center';X.fillStyle='#efe2c2';X.fillText('Versão 2.3',W/2,435);
+    X.font='16px Georgia,serif';X.textAlign='center';X.fillStyle='#efe2c2';X.fillText('Versão 2.4',W/2,435);
     return;
   }
   if(scene=='intro'){
@@ -581,16 +589,18 @@ function hud(){
     panel();
     if(nP === 3){
       T('RESULTADO DO MODO VERSUS',W/2,105,32,'#ffb15c','center');
-      T(winnerText,W/2,155,28,'#8be8ff','center');
-      T('PLACAR FINAL DA ARENA:',W/2,205,20,'#ffd34d','center');
-      T('Jogador 1 (Laranja): '+(P[0]?P[0].score:0)+' PONTOS',W/2,245,22,'#ff9a47','center');
-      T('Jogador 2 (Verde): '+(P[1]?P[1].score:0)+' PONTOS',W/2,285,22,'#4fd8c4','center');
+      T(winnerText,W/2,145,26,'#8be8ff','center');
+      T('Tempo de Batalha: ' + finalBossTimeStr, W/2, 180, 18, '#efe2c2', 'center');
+      T('PLACAR FINAL DA ARENA:',W/2,215,18,'#ffd34d','center');
+      T('Jogador 1 (Laranja): '+(P[0]?P[0].score:0)+' PONTOS',W/2,250,20,'#ff9a47','center');
+      T('Jogador 2 (Verde): '+(P[1]?P[1].score:0)+' PONTOS',W/2,285,20,'#4fd8c4','center');
       T('Pressione ENTER para voltar ao menu',W/2,H-70,20,'#ffe08a','center');
     } else {
-      T(scene==='win'?'IMAGEM NÍTIDA!':'IMAGEM BORRADA…',W/2,115,44,scene==='win'?'#ffb15c':'#ff5a6a','center');
+      T(scene==='win'?'IMAGEM NÍTIDA!':'IMAGEM BORRADA…',W/2,110,40,scene==='win'?'#ffb15c':'#ff5a6a','center');
       const g=hits==0&&clock<80?'S':hits<=2?'A':'B';
-      T('Nota '+g+' · Pontuação Total: '+(P[0]?P[0].score:0),W/2,170,28,'#8be8ff','center');
-      let y=WR('Carta Estelar: O telescópio Roman investiga a energia escura e exoplanetas com um campo de visão 100 vezes maior que o Hubble.',100,215,W-200,24,18);
+      T('Nota '+g+' · Pontuação Total: '+(P[0]?P[0].score:0),W/2,155,24,'#8be8ff','center');
+      T('Tempo de Batalha: ' + finalBossTimeStr, W/2, 190, 18, '#ffd34d', 'center');
+      let y=WR('Carta Estelar: O telescópio Roman investiga a energia escura e exoplanetas com um campo de visão 100 vezes maior que o Hubble.',100,225,W-200,22,16);
       T('ENTER para voltar',W/2,H-70,20,'#ffe08a','center');
     }
   }
