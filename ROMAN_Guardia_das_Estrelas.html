@@ -148,24 +148,24 @@ function panel(){X.fillStyle='rgba(20,12,40,.88)';X.fillRect(70,50,W-140,H-100);
 function hud(){
   if(scene=='diff'){
     T('ESCOLHA A DIFICULDADE',W/2,140,44,'#ffb15c','center');
-    T('1 · NORMAL',W/2,235,40,'#8be8ff','center');
+    T('1 (A) · NORMAL',W/2,235,40,'#8be8ff','center');
     T('O chefe ataca só com a primeira fase e o espelho vai ficando nítido a cada acerto.',W/2,272,17,'#efe2c2','center','Georgia,serif');
-    T('2 · ESPECIALISTA',W/2,355,40,'#ff9a47','center');
+    T('2 (Y/B) · ESPECIALISTA',W/2,355,40,'#ff9a47','center');
     T('Três fases: o chefe fica nítido, com espiral e rajadas furiosas.',W/2,392,17,'#efe2c2','center','Georgia,serif');
-    T('ESC para voltar',W/2,465,16,'#efe2c2','center','Georgia,serif');return}
+    T('ESC ou SELECT para voltar',W/2,465,16,'#efe2c2','center','Georgia,serif');return}
   if(scene=='title'){
     T('ROMAN',W/2,215,120,'#ffb15c','center');T('Guardiã das Estrelas',W/2,275,30,'#efe2c2','center');
-    T('Pressione 1 para solo ou 2 para co-op',W/2,370,22,'#8be8ff','center');
-    X.font='16px Georgia,serif';X.textAlign='center';X.fillStyle='#efe2c2';X.fillText('Protótipo 2 em homenagem a Nancy Grace Roman (1925 a 2018) · jogue no computador, com teclado',W/2,440);
+    T('Pressione 1 (A) para solo ou 2 (Y/B) para co-op',W/2,370,22,'#8be8ff','center');
+    X.font='16px Georgia,serif';X.textAlign='center';X.fillStyle='#efe2c2';X.fillText('Protótipo 2 em homenagem a Nancy Grace Roman (1925 a 2018) · jogue com teclado ou controle',W/2,440);
     X.save();X.translate(W/2,320);X.rotate(Math.sin(t*2)*.08);X.restore();return}
   if(scene=='intro'){
     panel();T('FASE 1 · HUBBLE, 1990',100,105,30,'#ffb15c');
     let y=WR('“Aqui é Nancy Grace Roman. Em 1960 virei a primeira astrônoma-chefe da NASA e briguei por telescópios no espaço, acima do ar que borra as estrelas. O Hubble foi a prova. Mas o espelho dele nasceu com um defeito e as imagens saíram borradas. Ajude a deixar tudo nítido!”',100,145,W-200,26,20);
     y=WR('Orbes rosa não machucam: pegue 5 para carregar o Coronógrafo e eclipsar a estrela-chefe.',100,y+8,W-200,24,18,'#ff9ad9');
     y+=4;
-    if(nP==1){T('Mover: WASD ou setas',100,y+10,16,'#8be8ff');T('Atirar: J ou Espaço',100,y+36,16,'#8be8ff');T('Trocar Hubble/Roman: K',100,y+62,16,'#8be8ff');T('Coronógrafo: L',100,y+88,16,'#8be8ff')}
-    else{T('P1 (laranja): WASD, J atira, K troca, L coronógrafo',100,y+10,16,'#ff9a47');T('P2 (verde): setas, vírgula atira, ponto troca, barra coronógrafo',100,y+36,16,'#4fd8c4');T('Fiquem na mesma altura para o tiro combinado!',100,y+62,16,'#8be8ff')}
-    T('ENTER para começar',W/2,H-72,24,'#ffe08a','center');return}
+    if(nP==1){T('Mover: WASD, Setas, Analógico ou D-Pad',100,y+10,16,'#8be8ff');T('Atirar: J, Espaço ou A / RT',100,y+36,16,'#8be8ff');T('Trocar Hubble/Roman: K ou X / LT',100,y+62,16,'#8be8ff');T('Coronógrafo: L ou Y / B',100,y+88,16,'#8be8ff')}
+    else{T('P1 (laranja): WASD, J atira, K troca, L coronógrafo',100,y+10,16,'#ff9a47');T('P2 (verde): setas, vírgula atira, ponto troca, barra coronógrafo',100,y+36,16,'#4fd8c4');T('Controles: Analógico move, A atira, X troca, Y ataca!',100,y+62,16,'#8be8ff')}
+    T('ENTER ou START para começar',W/2,H-72,24,'#ffe08a','center');return}
   if(scene=='ready'){T('PREPARAR…',W/2,H/2-10,70,'#ffe08a','center');if(tm<.8)T('OBSERVAR!',W/2,H/2+70,80,'#ff9a47','center');return}
   P.forEach((p,i)=>{
     const y=34+i*52,c=p.col;T('P'+(i+1),18,y,18,c);
@@ -184,11 +184,25 @@ function hud(){
     T('Tempo: '+clock.toFixed(1)+' s · Acertos sofridos: '+hits+' · '+(hard?'Especialista':'Normal'),W/2,205,16,'#efe2c2','center');
     let y=WR('Carta Estelar 1: o espelho do Hubble tinha um defeito de fabricação (aberração esférica). Em 1993, astronautas instalaram uma óptica corretiva e as imagens ficaram nítidas.',100,245,W-200,24,18);
     y=WR('Carta Estelar 2: o telescópio que leva o nome da Nancy, o Roman, foi lançado em 30 de agosto de 2026. Seu campo de visão é cerca de 100 vezes maior que o do Hubble e as primeiras imagens são esperadas para o início de 2027.',100,y+8,W-200,24,18,'#ff9ad9');
-    T('ENTER para voltar ao início',W/2,H-72,20,'#ffe08a','center')}
-  if(scene=='lose'){panel();T('IMAGEM BORRADA…',W/2,215,50,'#ff5a6a','center');T('A Aberração venceu desta vez.',W/2,265,20,'#efe2c2','center');T('ENTER para tentar de novo',W/2,340,24,'#ffe08a','center')}
+    T('ENTER ou START para voltar',W/2,H-72,20,'#ffe08a','center')}
+  if(scene=='lose'){panel();T('IMAGEM BORRADA…',W/2,215,50,'#ff5a6a','center');T('A Aberração venceu desta vez.',W/2,265,20,'#efe2c2','center');T('ENTER ou START para tentar de novo',W/2,340,24,'#ffe08a','center')}
+}
+
+let gpPrev=[{},{}];
+function pollGP(){
+  const pads=navigator.getGamepads?navigator.getGamepads():[];
+  for(let i=0;i<2;i++){
+    const gp=pads[i];if(!gp)continue;
+    const setK=(c,p)=>{const pr=gpPrev[i][c];if(p&&!pr)K[c]=2;else if(p&&pr){if(K[c]!=2)K[c]=1}else if(!p&&pr)K[c]=0;gpPrev[i][c]=p;};
+    const k=KEYS[i],b=gp.buttons,B=x=>b[x]&&b[x].pressed,ax=gp.axes,A=(x,d)=>ax[x]!==undefined&&(d<0?ax[x]<-0.4:ax[x]>0.4);
+    setK(k.u,B(12)||A(1,-1));setK(k.d,B(13)||A(1,1));setK(k.l,B(14)||A(0,-1));setK(k.r,B(15)||A(0,1));
+    const f=B(0)||B(7);setK(k.f,f);setK(k.m,B(2)||B(6));setK(k.x,B(3)||B(1));
+    setK('Enter',B(9));if(i===0){setK('Space',f);setK('Digit2',B(3)||B(1));setK('Escape',B(8));}
+  }
 }
 let last=performance.now();
-function loop(n){const dt=Math.min(.033,(n-last)/1000);last=n;t+=dt;step(dt);draw();for(const k in K)if(K[k]==2)K[k]=1;requestAnimationFrame(loop)}
+function loop(n){const dt=Math.min(.033,(n-last)/1000);last=n;t+=dt;pollGP();step(dt);draw();for(const k in K)if(K[k]==2)K[k]=1;requestAnimationFrame(loop)}
+
 requestAnimationFrame(loop);
 </script>
 </body>
