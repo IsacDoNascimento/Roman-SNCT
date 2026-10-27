@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>ROMAN: Guardiã das Estrelas (Versão Mobile Otimizada v4)</title>
+<title>ROMAN: Guardiã das Estrelas (Modo Versus v5)</title>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#efe2c2;--ink:#1d1a2e;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -21,22 +21,22 @@ const C=document.getElementById('c'),X=C.getContext('2d'),W=960,H=540;C.width=W;
 const K={};
 addEventListener('keydown',e=>{if(!K[e.code])K[e.code]=2;if(e.code.startsWith('Arrow')||e.code==='Space')e.preventDefault()});
 addEventListener('keyup',e=>K[e.code]=0);
-const KEYS=[{u:'KeyW',d:'KeyS',l:'KeyA',r:'KeyD',f:'KeyJ',m:'KeyK',x:'KeyL'},{u:'ArrowUp',d:'ArrowDown',l:'ArrowLeft',r:'ArrowRight',f:'Comma',m:'Period',x:'Slash'}];
+const KEYS=[
+  {u:'KeyW',d:'KeyS',l:'KeyA',r:'KeyD',f:'KeyJ',m:'KeyK',x:'KeyL'},
+  {u:'ArrowUp',d:'ArrowDown',l:'ArrowLeft',r:'ArrowRight',f:'Comma',m:'Period',x:'Slash'}
+];
 const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
 
-let A, bgmNode=null, bgmGain=null, musicOn=true;
+let A, musicOn=true;
 function initAudio(){
   if(!A){
-    try{
-      A=new (window.AudioContext||window.webkitAudioContext)();
-    }catch(e){}
+    try{ A=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
   }
   if(A && A.state==='suspended') A.resume();
 }
 
 function snd(f,d=.08,ty='square',v=.04,s=0){
-  initAudio();
-  if(!A)return;
+  initAudio();if(!A)return;
   try{
     const o=A.createOscillator(),g=A.createGain(),n=A.currentTime;
     o.type=ty;o.frequency.setValueAtTime(f,n);
@@ -48,7 +48,7 @@ function snd(f,d=.08,ty='square',v=.04,s=0){
   }catch(e){}
 }
 
-// BGM Chiptune Synth Generator
+// BGM Synth
 let bgmStep=0, bgmTimer=0;
 const notes = [220, 261.63, 293.66, 329.63, 392.00, 440, 523.25];
 function updateBGM(dt){
@@ -71,15 +71,15 @@ function updateBGM(dt){
 let scene='title',nP=1,P=[],B,bul=[],sh=[],pk=[],pt=[],asteroids=[],pwItems=[],flashR=0,flashW=0;
 let t=0,shake=0,hs=0,tip='',tipT=0,hits=0,clock=0,tm=0,eclipse=0,combo=false,hard=1;
 let isTouch = false;
+let winnerText = '';
+
 const stars=[];for(let i=0;i<110;i++)stars.push({x:Math.random()*W,y:Math.random()*H,z:Math.random()*2.5+.5});
 const V=X.createRadialGradient(W/2,H/2,H*.45,W/2,H/2,H*1.0);V.addColorStop(0,'rgba(0,0,0,0)');V.addColorStop(1,'rgba(8,4,20,.65)');
 
-// Touch & Analog Joystick State
+// Touch State
 let joyTouchId = null;
 const joyBase = {x: 130, y: H - 145, r: 72};
 const joyStick = {x: 130, y: H - 145};
-
-// Botões ampliados (raio maior) e elevados (Y menor)
 const touchBtns = {
   fire: {x: W - 110, y: H - 125, r: 48, label: 'TIRO', k: 'KeyJ'},
   mode: {x: W - 220, y: H - 175, r: 42, label: 'MODO', k: 'KeyK'},
@@ -91,7 +91,6 @@ function updateTouches(e){
   isTouch = true; initAudio();
   const rect = C.getBoundingClientRect();
   const scaleX = W / rect.width, scaleY = H / rect.height;
-
   const currentKeys = {KeyW:false, KeyS:false, KeyA:false, KeyD:false, KeyJ:false, KeyK:false, KeyL:false, Enter:false};
   let joyActive = false;
 
@@ -100,60 +99,29 @@ function updateTouches(e){
     const tx = (touch.clientX - rect.left) * scaleX;
     const ty = (touch.clientY - rect.top) * scaleY;
 
-    // Lado Esquerdo: Analógico dinâmico de arrasto
     if(touch.identifier === joyTouchId || (joyTouchId === null && tx < W * 0.45)){
-      joyTouchId = touch.identifier;
-      joyActive = true;
-
-      const dx = tx - joyBase.x;
-      const dy = ty - joyBase.y;
-      const dist = Math.hypot(dx, dy);
-      const maxR = joyBase.r;
-
-      if(dist > maxR){
-        joyStick.x = joyBase.x + (dx / dist) * maxR;
-        joyStick.y = joyBase.y + (dy / dist) * maxR;
-      } else {
-        joyStick.x = tx;
-        joyStick.y = ty;
-      }
-
-      // Detecção suave de direção por limite de distância
+      joyTouchId = touch.identifier; joyActive = true;
+      const dx = tx - joyBase.x, dy = ty - joyBase.y, dist = Math.hypot(dx, dy), maxR = joyBase.r;
+      if(dist > maxR){ joyStick.x = joyBase.x + (dx / dist) * maxR; joyStick.y = joyBase.y + (dy / dist) * maxR; }
+      else { joyStick.x = tx; joyStick.y = ty; }
       if(dx < -14) currentKeys.KeyA = true;
       if(dx > 14) currentKeys.KeyD = true;
       if(dy < -14) currentKeys.KeyW = true;
       if(dy > 14) currentKeys.KeyS = true;
-    }
-    // Lado Direito: Botões de Ação ampliados e elevados
-    else if(tx >= W * 0.45){
+    } else if(tx >= W * 0.45){
       if(scene !== 'play') currentKeys.Enter = true;
-
       for(const bKey in touchBtns){
         const btn = touchBtns[bKey];
-        if(Math.hypot(tx - btn.x, ty - btn.y) <= btn.r + 20){
-          currentKeys[btn.k] = true;
-        }
+        if(Math.hypot(tx - btn.x, ty - btn.y) <= btn.r + 20) currentKeys[btn.k] = true;
       }
     }
   }
+  if(!joyActive){ joyTouchId = null; joyStick.x = joyBase.x; joyStick.y = joyBase.y; }
 
-  if(!joyActive){
-    joyTouchId = null;
-    joyStick.x = joyBase.x;
-    joyStick.y = joyBase.y;
-  }
-
-  // Sincroniza estado de touch com a tabela global de entradas K
   for(const k in currentKeys){
     const pressed = currentKeys[k];
-    if(pressed){
-      if(!K[k]) K[k] = 2;
-      else if(K[k] === 2) K[k] = 1;
-      touchState[k] = 1;
-    } else if(touchState[k]){
-      K[k] = 0;
-      touchState[k] = 0;
-    }
+    if(pressed){ if(!K[k]) K[k] = 2; else if(K[k] === 2) K[k] = 1; touchState[k] = 1; }
+    else if(touchState[k]){ K[k] = 0; touchState[k] = 0; }
   }
 }
 
@@ -161,35 +129,63 @@ function updateTouches(e){
   addEventListener(evt, e => {
     e.preventDefault();
     if(e.touches.length === 0){
-      joyTouchId = null;
-      joyStick.x = joyBase.x;
-      joyStick.y = joyBase.y;
-      for(const k in touchState){
-        if(touchState[k]){ K[k] = 0; touchState[k] = 0; }
-      }
-    } else {
-      updateTouches(e);
-    }
+      joyTouchId = null; joyStick.x = joyBase.x; joyStick.y = joyBase.y;
+      for(const k in touchState){ if(touchState[k]){ K[k] = 0; touchState[k] = 0; } }
+    } else { updateTouches(e); }
   }, {passive: false});
 });
 
+function addScore(p, basePoints, reason){
+  if(!p) return;
+  const pts = Math.floor(basePoints * p.multiplier);
+  p.score += pts;
+}
+
+function updateCombo(p, hitSuccess){
+  if(hitSuccess){
+    p.streak++;
+    if(p.streak >= 9) p.multiplier = 3.0;
+    else if(p.streak >= 6) p.multiplier = 2.0;
+    else if(p.streak >= 3) p.multiplier = 1.5;
+  } else {
+    p.streak = 0;
+    p.multiplier = 1.0;
+  }
+}
+
 function start(n,h){
-  hard=h;nP=n;P=[];
-  for(let i=0;i<n;i++)P.push({i,x:110,y:H/2+(n>1?(i?70:-70):0),hp:3,mode:0,cd:0,inv:0,ex:0,alive:1,col:i?'#4fd8c4':'#ff9a47',boost:0,shield:0});
-  B={x:W-210,y:H/2,r:92,hp:720,max:720,t:0,ph:1,c1:1.5,c2:1,c3:2,c4:2,c5:3.5,spin:0,stun:0,hit:0,open:0};
-  bul=[];sh=[];pk=[];pt=[];asteroids=[];pwItems=[];hits=0;clock=0;eclipse=0;scene='intro';
+  hard=h; nP=n; P=[];
+  const numPlayers = (n === 3) ? 2 : n; // Mode 3 = Versus (2 Players)
+  for(let i=0;i<numPlayers;i++){
+    P.push({
+      i, x:110, y:H/2+(numPlayers>1?(i?80:-80):0), hp:3, mode:0, cd:0, inv:0, ex:0, alive:1,
+      col:i?'#4fd8c4':'#ff9a47', boost:0, shield:0, score:0, streak:0, multiplier:1.0
+    });
+  }
+  B={x:W-210,y:H/2,r:92,hp:720,max:720,t:0,ph:1,c1:1.5,c2:1,c3:2,c4:2,c5:3.5,spin:0,stun:0,hit:0,open:0,targetP:0};
+  bul=[];sh=[];pk=[];pt=[];asteroids=[];pwItems=[];hits=0;clock=0;eclipse=0;winnerText='';scene='intro';
 }
 
 function inp(p,k,held){
-  const s=nP==1?[0,1]:[p.i];
-  return s.some(j=>{const c=KEYS[j][k];return held?K[c]>0:K[c]==2})||(nP==1&&k=='f'&&held&&K.Space>0);
+  const s = (nP===1) ? [0,1] : [p.i];
+  return s.some(j=>{const c=KEYS[j][k];return held?K[c]>0:K[c]==2}) ||
+         (nP===1&&k==='f'&&held&&K.Space>0) ||
+         (p.i===0&&k==='f'&&held&&K.Space>0) ||
+         (p.i===1&&k==='f'&&held&&(K.Numpad0>0||K.KeyM>0)) ||
+         (p.i===1&&k==='m'&&!held&&(K.NumpadDecimal>0||K.Period>0)) ||
+         (p.i===1&&k==='x'&&!held&&(K.Enter>0||K.ShiftRight>0));
 }
 
 function boom(x,y,col,n){for(let i=0;i<n;i++){const a=Math.random()*6.283,s=60+Math.random()*260;pt.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.3+Math.random()*.5,col,r:2+Math.random()*3})}}
 
 function hurt(p){
-  if(p.shield > 0){ p.shield = 0; boom(p.x, p.y, '#ffd34d', 20); snd(300, .2, 'sine', .08, -100); return; }
-  p.hp--;p.inv=1.6;hits++;shake=14;flashR=0.35;hs=.07;snd(90,.3,'sawtooth',.09,-40);boom(p.x,p.y,'#ff5a4d',18);
+  if(p.shield > 0){ p.shield = 0; boom(p.x, p.y, '#ffd34d', 20); snd(300, .2, 'sine', .08, -100); addScore(p, 150, 'Bloqueio'); return; }
+  p.hp--; p.inv=1.6; hits++; shake=14; flashR=0.35; hs=.07; snd(90,.3,'sawtooth',.09,-40); boom(p.x,p.y,'#ff5a4d',18);
+  
+  // Penalidade de dano (-150 pts e reseta combo)
+  p.score = Math.max(0, p.score - 150);
+  updateCombo(p, false);
+
   if(p.hp<=0){p.alive=0;boom(p.x,p.y,p.col,40)}
 }
 
@@ -204,20 +200,31 @@ function upP(p,dt){
   const fireCD = p.boost > 0 ? (p.mode==0?.05:.08) : (p.mode==0?.09:.14);
   if(inp(p,'f',1)&&p.cd<=0){
     if(p.mode==0){
-      sh.push({x:p.x+24,y:p.y,vx:950,vy:0,d:combo?3:2,m:0,pCol:p.col});
+      sh.push({x:p.x+24,y:p.y,vx:950,vy:0,d:combo?3:2,m:0,pCol:p.col,pOwner:p});
       p.cd=fireCD;snd(700,.05,'square',.02);
     }else{
-      [-.2,0,.2].forEach(a=>sh.push({x:p.x+20,y:p.y,vx:820*Math.cos(a),vy:820*Math.sin(a),d:combo?1.2:.7,m:1,pCol:p.col}));
+      [-.2,0,.2].forEach(a=>sh.push({x:p.x+20,y:p.y,vx:820*Math.cos(a),vy:820*Math.sin(a),d:combo?1.2:.7,m:1,pCol:p.col,pOwner:p}));
       p.cd=fireCD;snd(480,.06,'sawtooth',.015);
     }
   }
   if(inp(p,'x',0)&&p.ex>=5){
     p.ex=0;eclipse=1.6;B.stun=1.6;bul=[];asteroids=[];B.hp-=40;shake=18;flashW=0.4;snd(110,.6,'sawtooth',.1,-60);
+    addScore(p, 500, 'Coronógrafo');
+    updateCombo(p, true);
     tip='CORONÓGRAFO: bloqueia a luz da estrela para revelar o que está ao redor.';tipT=3.5;
   }
 }
 
-function tgt(){const a=P.filter(p=>p.alive);const p=a[Math.random()*a.length|0]||P[0];return Math.atan2(p.y-B.y,p.x-B.x)}
+function tgt(){
+  const aliveP = P.filter(p=>p.alive);
+  if(!aliveP.length) return 0;
+  // Aggro no Versus: ataca o jogador com maior pontuação ou o mais próximo
+  let p = aliveP[0];
+  if(nP === 3 && aliveP.length > 1){
+    p = (aliveP[0].score >= aliveP[1].score) ? aliveP[0] : aliveP[1];
+  }
+  return Math.atan2(p.y-B.y,p.x-B.x);
+}
 
 function upB(dt){
   B.t+=dt;B.y=H/2+Math.sin(B.t*.9)*150;B.hit-=dt;B.stun-=dt;B.open-=dt;
@@ -236,8 +243,7 @@ function upB(dt){
 }
 
 function step(dt){
-  initAudio();
-  updateBGM(dt);
+  initAudio(); updateBGM(dt);
   shake=Math.max(0,shake-60*dt);if(tipT>0)tipT-=dt;
   flashR=Math.max(0,flashR-dt);flashW=Math.max(0,flashW-dt);
 
@@ -253,28 +259,28 @@ function step(dt){
   if(scene=='title'){
     if(K.Enter==2||K.Space==2){scene='mode'}
     if(K.KeyC==2){scene='codex'}
-    return
+    return;
   }
   if(scene=='codex'){
     if(K.Escape==2||K.Backspace==2||K.Enter==2||K.Space==2||K.KeyC==2)scene='title';
-    return
+    return;
   }
   if(scene=='mode'){
     if(K.Digit1==2||K.Numpad1==2||K.Enter==2||K.Space==2){nP=1;scene='diff'}
     if(K.Digit2==2||K.Numpad2==2||K.KeyE==2){nP=2;scene='diff'}
+    if(K.Digit3==2||K.Numpad3==2||K.KeyV==2){nP=3;scene='diff'}
     if(K.Escape==2||K.Backspace==2)scene='title';
-    return
+    return;
   }
   if(scene=='diff'){
     if(K.Digit1==2||K.Numpad1==2||K.KeyN==2||K.Enter==2||K.Space==2)start(nP,0);
     if(K.Digit2==2||K.Numpad2==2||K.KeyE==2)start(nP,1);
     if(K.Escape==2||K.Backspace==2)scene='mode';
-    return
+    return;
   }
   if(scene=='intro'){if(K.Enter==2||K.Space==2){scene='ready';tm=1.5;snd(440,.15,'triangle',.06)}return}
   if(scene=='ready'){tm-=dt;if(tm<=0){scene='play';snd(880,.25,'square',.05)}return}
-  if(scene=='win'){if(K.Enter==2||K.Space==2)scene='title';return}
-  if(scene=='lose'){if(K.Enter==2||K.Space==2)start(nP,hard);return}
+  if(scene=='win'||scene=='lose'){if(K.Enter==2||K.Space==2)scene='title';return}
   if(hs>0){hs-=dt;return}
 
   clock+=dt;eclipse=Math.max(0,eclipse-dt);
@@ -303,6 +309,7 @@ function step(dt){
   pwItems=pwItems.filter(pw=>{
     const p=P.find(p=>p.alive&&Math.hypot(pw.x-p.x,pw.y-p.y)<pw.r+18);
     if(p){
+      addScore(p, 150, 'PowerUp');
       if(pw.type==='spec'){ p.boost=6.0; tip='ESPECTRÔMETRO: Velocidade de disparo ultra-rápida!'; tipT=3; snd(600,.2,'triangle',.08,200); }
       else if(pw.type==='grav'){ p.shield=8.0; tip='MICROLENTE GRAVITACIONAL: Campo de força protetor ativado!'; tipT=3; snd(500,.25,'sine',.08,300); }
       else if(pw.type==='solar'){ p.hp=Math.min(5, p.hp+1); tip='PAINEL SOLAR: Energia e vida restauradas (+1 ♥)!'; tipT=3; snd(800,.3,'sine',.08,400); }
@@ -315,7 +322,7 @@ function step(dt){
   pk=pk.filter(o=>{
     const p=P.find(p=>p.alive&&Math.hypot(o.x-p.x,o.y-p.y)<o.r+16);
     if(p){
-      p.ex=Math.min(5,p.ex+1);snd(900,.12,'sine',.06,300);boom(o.x,o.y,'#ff7ad9',10);return false
+      p.ex=Math.min(5,p.ex+1); addScore(p, 100, 'Orbe'); snd(900,.12,'sine',.06,300); boom(o.x,o.y,'#ff7ad9',10); return false;
     }
     return true;
   });
@@ -328,10 +335,12 @@ function step(dt){
     if(ast){
       ast.hp-=s.d;
       boom(s.x,s.y,'#c2a67e',4);
+      if(s.pOwner){ addScore(s.pOwner, 50, 'Acerto Asteroide'); updateCombo(s.pOwner, true); }
       if(ast.hp<=0){
         asteroids=asteroids.filter(q=>q!==ast);
         boom(ast.x,ast.y,'#e6c89c',16);
         snd(220,.15,'sawtooth',.06,-50);
+        if(s.pOwner){ addScore(s.pOwner, 200, 'Asteroide Destruído'); }
         if(Math.random()<0.45){
           const types=['spec','grav','solar'], cols=['#4fd8c4','#ffd34d','#4dff88'];
           const idx=Math.floor(Math.random()*types.length);
@@ -342,16 +351,45 @@ function step(dt){
     }
 
     if(Math.hypot(s.x-B.x,s.y-B.y)<B.r+4){
-      B.hp-=s.d*(B.stun>0?2:1);B.hit=.06;
+      const damage = s.d*(B.stun>0?2:1);
+      B.hp -= damage; B.hit=.06;
       boom(s.x,s.y,'#ffe08a',combo?5:2);
       if(combo) flashW = 0.08;
+
+      if(s.pOwner){
+        addScore(s.pOwner, 100, 'Dano Chefão');
+        updateCombo(s.pOwner, true);
+      }
+
+      if(B.hp<=0 && s.pOwner){
+        // K.O. Bonus de +2000 pontos para o golpe final!
+        addScore(s.pOwner, 2000, 'K.O. Bonus');
+      }
       return false;
     }
     return true;
   });
 
-  if(B.hp<=0){scene='win';bul=[];pk=[];sh=[];asteroids=[];pwItems=[];boom(B.x,B.y,'#ffe08a',90);shake=24;snd(60,.8,'sawtooth',.12,-30)}
-  else if(P.every(p=>!p.alive)){scene='lose';snd(70,.7,'sawtooth',.1,-30)}
+  if(B.hp<=0){
+    scene='win'; bul=[]; pk=[]; sh=[]; asteroids=[]; pwItems=[]; boom(B.x,B.y,'#ffe08a',90); shake=24; snd(60,.8,'sawtooth',.12,-30);
+    if(nP === 3){
+      const p1Score = P[0] ? P[0].score : 0;
+      const p2Score = P[1] ? P[1].score : 0;
+      if(p1Score > p2Score) winnerText = 'JOGADOR 1 VENCEU!';
+      else if(p2Score > p1Score) winnerText = 'JOGADOR 2 VENCEU!';
+      else winnerText = 'EMPATE HISTÓRICO!';
+    }
+  }
+  else if(P.every(p=>!p.alive)){
+    scene='lose'; snd(70,.7,'sawtooth',.1,-30);
+    if(nP === 3){
+      const p1Score = P[0] ? P[0].score : 0;
+      const p2Score = P[1] ? P[1].score : 0;
+      if(p1Score > p2Score) winnerText = 'JOGADOR 1 VENCEU POR PONTOS!';
+      else if(p2Score > p1Score) winnerText = 'JOGADOR 2 VENCEU POR PONTOS!';
+      else winnerText = 'AMBOS FORAM DERROTADOS!';
+    }
+  }
 }
 
 function T(s,x,y,sz,col,al,f){X.font=sz+'px '+(f||'Bungee,Impact,sans-serif');X.textAlign=al||'left';X.fillStyle=col||'#efe2c2';X.fillText(s,x,y)}
@@ -396,84 +434,103 @@ function drawB(){
   X.restore();
 }
 
+function renderWorldObjects(){
+  if(scene!='win')drawB();
+
+  asteroids.forEach(a=>{
+    X.fillStyle='#8c7355';X.strokeStyle='#1d1a2e';X.lineWidth=3;
+    X.beginPath();X.arc(a.x,a.y,a.r,0,7);X.fill();X.stroke();
+    X.fillStyle='#69533a';X.beginPath();X.arc(a.x-3,a.y-3,a.r*0.4,0,7);X.fill();
+  });
+
+  pwItems.forEach(pw=>{
+    X.fillStyle=pw.col;X.strokeStyle='#fff';X.lineWidth=2.5;
+    X.beginPath();X.arc(pw.x,pw.y,pw.r+Math.sin(t*8)*2,0,7);X.fill();X.stroke();
+    T(pw.type==='spec'?'S':pw.type==='grav'?'G':'♥',pw.x,pw.y+4,11,'#1d1a2e','center','Georgia,serif');
+  });
+
+  pk.forEach(o=>{X.fillStyle='#ff7ad9';X.strokeStyle='#fff';X.lineWidth=3;X.beginPath();X.arc(o.x,o.y,o.r+Math.sin(t*10)*2,0,7);X.fill();X.stroke()});
+  bul.forEach(b=>{X.fillStyle='#fff3c4';X.strokeStyle='#1d1a2e';X.lineWidth=2.5;X.beginPath();X.arc(b.x,b.y,b.r,0,7);X.fill();X.stroke()});
+
+  sh.forEach(s=>{
+    X.fillStyle=combo?'#ffea78':(s.m?'#8be8ff':'#ffe08a');
+    X.fillRect(s.x-(s.m?7:16),s.y-(s.m?(combo?4:2):3),s.m?14:(combo?40:32),s.m?(combo?8:4):(combo?10:6));
+  });
+
+  P.forEach(p=>{if(p.alive)ship(p)});
+}
+
 function drawTouchOverlay(){
   if(!isTouch)return;
   X.save();
+  X.globalAlpha = 0.3; X.lineWidth = 4; X.strokeStyle = '#efe2c2'; X.fillStyle = 'rgba(239,226,194,0.08)';
+  X.beginPath(); X.arc(joyBase.x, joyBase.y, joyBase.r, 0, Math.PI * 2); X.fill(); X.stroke();
 
-  // Dynamic & Smooth Analog Joystick Base
-  X.globalAlpha = 0.3;
-  X.lineWidth = 4;
-  X.strokeStyle = '#efe2c2';
-  X.fillStyle = 'rgba(239,226,194,0.08)';
-  X.beginPath();
-  X.arc(joyBase.x, joyBase.y, joyBase.r, 0, Math.PI * 2);
-  X.fill();
-  X.stroke();
+  X.globalAlpha = 0.65; X.fillStyle = '#8be8ff'; X.strokeStyle = '#efe2c2'; X.lineWidth = 3;
+  X.beginPath(); X.arc(joyStick.x, joyStick.y, 28, 0, Math.PI * 2); X.fill(); X.stroke();
 
-  // Joystick Stick Head (Pino de arrasto)
-  X.globalAlpha = 0.65;
-  X.fillStyle = '#8be8ff';
-  X.strokeStyle = '#efe2c2';
-  X.lineWidth = 3;
-  X.beginPath();
-  X.arc(joyStick.x, joyStick.y, 28, 0, Math.PI * 2);
-  X.fill();
-  X.stroke();
-
-  // Enlarged and Lifted Action Buttons
   for(const bKey in touchBtns){
-    const btn = touchBtns[bKey];
-    const isPressed = touchState[btn.k];
-
-    X.globalAlpha = isPressed ? 0.75 : 0.38;
-    X.fillStyle = isPressed ? '#ff9a47' : 'rgba(20,12,40,0.6)';
-    X.strokeStyle = '#efe2c2';
-    X.lineWidth = 3.5;
-
-    X.beginPath();
-    X.arc(btn.x, btn.y, btn.r, 0, Math.PI * 2);
-    X.fill();
-    X.stroke();
-
-    X.globalAlpha = 0.95;
-    T(btn.label, btn.x, btn.y + 5, Math.floor(btn.r * 0.32), '#efe2c2', 'center');
+    const btn = touchBtns[bKey]; const isPressed = touchState[btn.k];
+    X.globalAlpha = isPressed ? 0.75 : 0.38; X.fillStyle = isPressed ? '#ff9a47' : 'rgba(20,12,40,0.6)';
+    X.strokeStyle = '#efe2c2'; X.lineWidth = 3.5;
+    X.beginPath(); X.arc(btn.x, btn.y, btn.r, 0, Math.PI * 2); X.fill(); X.stroke();
+    X.globalAlpha = 0.95; T(btn.label, btn.x, btn.y + 5, Math.floor(btn.r * 0.32), '#efe2c2', 'center');
   }
-
   X.restore();
 }
 
 function draw(){
-  X.setTransform(1,0,0,1,0,0);X.clearRect(0,0,W,H);
-  X.save();if(shake>0)X.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);
-  bg();
+  X.setTransform(1,0,0,1,0,0); X.clearRect(0,0,W,H);
+  X.save(); if(shake>0) X.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);
 
-  if(scene!='title'&&scene!='codex'&&scene!='mode'&&scene!='diff'&&scene!='intro'){
-    if(scene!='win')drawB();
+  if(nP === 3 && (scene==='play' || scene==='ready')){
+    // RENDERIZAÇÃO EM TELA DIVIDIDA (SPLIT SCREEN)
+    // LADO ESQUERDO: P1 VIEWPORT (0 a 476 px)
+    X.save();
+    X.beginPath(); X.rect(0, 0, 476, H); X.clip();
+    bg();
+    // Câmera transladada acompanhando P1
+    const p1 = P[0] || {x: W/2, y: H/2};
+    const cam1X = cl(238 - p1.x, -200, 0);
+    const cam1Y = cl(270 - p1.y, -100, 100);
+    X.save(); X.translate(cam1X, cam1Y);
+    renderWorldObjects();
+    pt.forEach(p=>{X.fillStyle=p.col;X.globalAlpha=cl(p.life*2,0,1);X.fillRect(p.x,p.y,p.r,p.r)});X.globalAlpha=1;
+    X.restore();
+    // HUD P1 no topo
+    T('P1 (SÃO PAULO) · PTS: '+p1.score, 15, 28, 14, '#ff9a47');
+    T('COMBO: '+p1.multiplier.toFixed(1)+'x', 15, 46, 12, '#8be8ff');
+    X.restore();
 
-    asteroids.forEach(a=>{
-      X.fillStyle='#8c7355';X.strokeStyle='#1d1a2e';X.lineWidth=3;
-      X.beginPath();X.arc(a.x,a.y,a.r,0,7);X.fill();X.stroke();
-      X.fillStyle='#69533a';X.beginPath();X.arc(a.x-3,a.y-3,a.r*0.4,0,7);X.fill();
-    });
+    // LADO DIREITO: P2 VIEWPORT (484 a 960 px)
+    X.save();
+    X.beginPath(); X.rect(484, 0, 476, H); X.clip();
+    bg();
+    // Câmera transladada acompanhando P2
+    const p2 = P[1] || {x: W/2, y: H/2};
+    const cam2X = cl(722 - p2.x, -200, 0);
+    const cam2Y = cl(270 - p2.y, -100, 100);
+    X.save(); X.translate(cam2X, cam2Y);
+    renderWorldObjects();
+    pt.forEach(p=>{X.fillStyle=p.col;X.globalAlpha=cl(p.life*2,0,1);X.fillRect(p.x,p.y,p.r,p.r)});X.globalAlpha=1;
+    X.restore();
+    // HUD P2 no topo
+    T('P2 (PIAUÍ) · PTS: '+p2.score, 500, 28, 14, '#4fd8c4');
+    T('COMBO: '+p2.multiplier.toFixed(1)+'x', 500, 46, 12, '#8be8ff');
+    X.restore();
 
-    pwItems.forEach(pw=>{
-      X.fillStyle=pw.col;X.strokeStyle='#fff';X.lineWidth=2.5;
-      X.beginPath();X.arc(pw.x,pw.y,pw.r+Math.sin(t*8)*2,0,7);X.fill();X.stroke();
-      T(pw.type==='spec'?'S':pw.type==='grav'?'G':'♥',pw.x,pw.y+4,11,'#1d1a2e','center','Georgia,serif');
-    });
-
-    pk.forEach(o=>{X.fillStyle='#ff7ad9';X.strokeStyle='#fff';X.lineWidth=3;X.beginPath();X.arc(o.x,o.y,o.r+Math.sin(t*10)*2,0,7);X.fill();X.stroke()});
-    bul.forEach(b=>{X.fillStyle='#fff3c4';X.strokeStyle='#1d1a2e';X.lineWidth=2.5;X.beginPath();X.arc(b.x,b.y,b.r,0,7);X.fill();X.stroke()});
-
-    sh.forEach(s=>{
-      X.fillStyle=combo?'#ffea78':(s.m?'#8be8ff':'#ffe08a');
-      X.fillRect(s.x-(s.m?7:16),s.y-(s.m?(combo?4:2):3),s.m?14:(combo?40:32),s.m?(combo?8:4):(combo?10:6));
-    });
-
-    P.forEach(p=>{if(p.alive)ship(p)});
+    // LINHA DIVISÓRIA COM GLOW
+    X.strokeStyle = '#ffe08a'; X.lineWidth = 6;
+    X.beginPath(); X.moveTo(W/2, 0); X.lineTo(W/2, H); X.stroke();
+  } else {
+    // RENDERIZAÇÃO TELA CHEIA PADRÃO (SOLO / CO-OP)
+    bg();
+    if(scene!='title'&&scene!='codex'&&scene!='mode'&&scene!='diff'&&scene!='intro'){
+      renderWorldObjects();
+    }
+    pt.forEach(p=>{X.fillStyle=p.col;X.globalAlpha=cl(p.life*2,0,1);X.fillRect(p.x,p.y,p.r,p.r)});X.globalAlpha=1;
   }
 
-  pt.forEach(p=>{X.fillStyle=p.col;X.globalAlpha=cl(p.life*2,0,1);X.fillRect(p.x,p.y,p.r,p.r)});X.globalAlpha=1;
   X.restore();
 
   if(flashR>0){X.fillStyle='rgba(255,60,60,'+flashR+')';X.fillRect(0,0,W,H);}
@@ -501,12 +558,20 @@ function hud(){
     return;
   }
   if(scene=='mode'){
-    T('ESCOLHA O MODO DE JOGO',W/2,140,44,'#ffb15c','center');
-    T('1 (A) · SOLO (1 JOGADOR)',W/2,235,40,'#8be8ff','center');
-    T('Controle o telescópio sozinho com alternância de modos e o coronógrafo.',W/2,272,17,'#efe2c2','center','Georgia,serif');
-    T('2 (Y/B) · CO-OP (2 JOGADORES)',W/2,355,40,'#ff9a47','center');
-    T('Jogue em dupla! Alinhem-se na mesma altura para disparar o tiro combinado de alto dano.',W/2,392,17,'#efe2c2','center','Georgia,serif');
-    T('ESC ou SELECT para voltar ao menu',W/2,465,16,'#efe2c2','center','Georgia,serif');return}
+    T('ESCOLHA O MODO DE JOGO',W/2,105,42,'#ffb15c','center');
+    
+    T('1 (A) · SOLO (1 JOGADOR)',W/2,185,32,'#8be8ff','center');
+    T('Controle o telescópio sozinho com alternância de modos e o coronógrafo.',W/2,215,15,'#efe2c2','center','Georgia,serif');
+    
+    T('2 (Y/B) · CO-OP (2 JOGADORES)',W/2,285,32,'#ff9a47','center');
+    T('Jogue em dupla cooperativa! Alinhem-se para disparar o tiro combinado.',W/2,315,15,'#efe2c2','center','Georgia,serif');
+    
+    T('3 (V/X) · VERSUS (SPLIT SCREEN)',W/2,385,32,'#ff5a6a','center');
+    T('Disputa compétitiva na mesma arena! Tela dividida com placar e multiplicador de combo.',W/2,415,15,'#efe2c2','center','Georgia,serif');
+    
+    T('ESC ou SELECT para voltar ao menu',W/2,485,16,'#efe2c2','center','Georgia,serif');
+    return;
+  }
   if(scene=='diff'){
     T('ESCOLHA A DIFICULDADE',W/2,140,44,'#ffb15c','center');
     T('1 (A) · NORMAL',W/2,235,40,'#8be8ff','center');
@@ -515,44 +580,64 @@ function hud(){
     T('Três fases: o chefe fica nítido, com espiral e rajadas furiosas.',W/2,392,17,'#efe2c2','center','Georgia,serif');
     T('ESC ou SELECT para voltar',W/2,465,16,'#efe2c2','center','Georgia,serif');return}
   if(scene=='title'){
-    T('ROMAN',W/2,195,120,'#ffb15c','center');T('Guardiã das Estrelas',W/2,255,30,'#efe2c2','center');
+    T('ROMAN',W/2,195,120,'#ffb15c','center');T('Guardiã das Estrelas (Versão 3 - Versus)',W/2,255,28,'#efe2c2','center');
     T('Pressione ENTER / ESPAÇO / START para Iniciar',W/2,335,22,'#8be8ff','center');
     T('Pressione C para o CODEX CIENTÍFICO DA NASA',W/2,375,18,'#ffd34d','center');
-    X.font='16px Georgia,serif';X.textAlign='center';X.fillStyle='#efe2c2';X.fillText('Protótipo Expandido · jogue com Teclado, Controle ou Touch Screen',W/2,435);
-    X.save();X.translate(W/2,320);X.rotate(Math.sin(t*2)*.08);X.restore();return}
+    X.font='16px Georgia,serif';X.textAlign='center';X.fillStyle='#efe2c2';X.fillText('Protótipo Expandido · jogue Solo, Co-op ou Versus em Split Screen',W/2,435);
+    return;
+  }
   if(scene=='intro'){
-    panel();T('FASE 1 · HUBBLE, 1990',100,105,30,'#ffb15c');
-    let y=WR('“Aqui é Nancy Grace Roman. Em 1960 virei a primeira astrônoma-chefe da NASA e briguei por telescópios no espaço, acima do ar que borra as estrelas. O Hubble foi a prova. Mas o espelho dele nasceu com um defeito e as imagens saíram borradas. Ajude a deixar tudo nítido!”',100,145,W-200,26,20);
-    y=WR('Destrua asteroides para obter itens de ciência (Espectrômetro, Microlente e Painel Solar). Pegue 5 orbes para o Coronógrafo!',100,y+8,W-200,24,17,'#ff9ad9');
+    panel();T(nP===3?'MODO VERSUS · TELA DIVIDIDA':'FASE 1 · HUBBLE, 1990',100,105,28,'#ffb15c');
+    let y=WR(nP===3?
+      '“Bem-vindos ao Modo Versus! Ambos os navegadores competirão lado a lado na mesma arena estelar. Quem acumular a maior pontuação através de acertos, combos e o K.O. Bonus de 2.000 pontos será o campeão!”':
+      '“Aqui é Nancy Grace Roman. Em 1960 virei a primeira astrônoma-chefe da NASA e briguei por telescópios no espaço, acima do ar que borra as estrelas. O Hubble foi a prova. Mas o espelho dele nasceu com um defeito e as imagens saíram borradas. Ajude a deixar tudo nítido!”',
+      100,145,W-200,26,18);
+    y=WR('Destrua asteroides para obter itens de ciência (Espectrômetro, Microlente e Painel Solar). Pegue 5 orbes para o Coronógrafo!',100,y+8,W-200,24,16,'#ff9ad9');
     y+=4;
-    if(nP==1){T('Mover: WASD, Setas, Analógico ou Touch (Arrasto)',100,y+10,16,'#8be8ff');T('Atirar: J, Espaço ou A / RT',100,y+36,16,'#8be8ff');T('Trocar Hubble/Roman: K ou X / LT',100,y+62,16,'#8be8ff');T('Coronógrafo: L ou Y / B',100,y+88,16,'#8be8ff')}
-    else{T('P1 (laranja): WASD, J atira, K troca, L coronógrafo',100,y+10,16,'#ff9a47');T('P2 (verde): setas, vírgula atira, ponto troca, barra coronógrafo',100,y+36,16,'#4fd8c4');T('Controles: Analógico move, A atira, X troca, Y ataca!',100,y+62,16,'#8be8ff')}
-    T('ENTER, START ou toque para começar',W/2,H-72,24,'#ffe08a','center');return}
+    if(nP==1){T('Mover: WASD, Setas ou Touch',100,y+10,16,'#8be8ff');T('Atirar: J, Espaço',100,y+34,16,'#8be8ff');T('Trocar Hubble/Roman: K',100,y+58,16,'#8be8ff');T('Coronógrafo: L',100,y+82,16,'#8be8ff')}
+    else{
+      T('P1 (Laranja): WASD (Mover), J/Espaço (Atirar), K (Trocar), L (Especial)',100,y+10,15,'#ff9a47');
+      T('P2 (Verde): Setas (Mover), Vírgula/Numpad0 (Atirar), Ponto/Numpad. (Trocar), Enter (Especial)',100,y+34,15,'#4fd8c4');
+      T('Sistema de Pontos: Dano +100 | Asteroide +200 | K.O. Bonus +2000 | Dano -150',100,y+58,15,'#ffd34d');
+    }
+    T('ENTER, START ou toque para começar',W/2,H-72,22,'#ffe08a','center');return;
+  }
   if(scene=='ready'){T('PREPARAR…',W/2,H/2-10,70,'#ffe08a','center');if(tm<.8)T('OBSERVAR!',W/2,H/2+70,80,'#ff9a47','center');return}
   
-  P.forEach((p,i)=>{
-    const y=34+i*52,c=p.col;T('P'+(i+1),18,y,18,c);
-    X.font='20px Georgia,serif';X.fillStyle=p.alive?'#ff5a6a':'#777';X.textAlign='left';X.fillText(p.alive?'♥'.repeat(p.hp):'✖',64,y);
-    for(let k=0;k<5;k++){X.fillStyle=k<p.ex?'#ff7ad9':'rgba(255,255,255,.2)';X.fillRect(18+k*16,y+8,12,8)}
-    T(p.mode?'ROMAN':'HUBBLE',100+0,y+24,12,'#efe2c2');
-    if(p.boost>0) T('SPEED!', 160, y+24, 11, '#8be8ff');
-    if(p.shield>0) T('SHIELD!', 215, y+24, 11, '#ffd34d');
-  });
+  if(nP !== 3){
+    P.forEach((p,i)=>{
+      const y=34+i*52,c=p.col;T('P'+(i+1),18,y,18,c);
+      X.font='20px Georgia,serif';X.fillStyle=p.alive?'#ff5a6a':'#777';X.textAlign='left';X.fillText(p.alive?'♥'.repeat(p.hp):'✖',64,y);
+      for(let k=0;k<5;k++){X.fillStyle=k<p.ex?'#ff7ad9':'rgba(255,255,255,.2)';X.fillRect(18+k*16,y+8,12,8)}
+      T(p.mode?'ROMAN':'HUBBLE',100+0,y+24,12,'#efe2c2');
+      if(p.boost>0) T('SPEED!', 160, y+24, 11, '#8be8ff');
+      if(p.shield>0) T('SHIELD!', 215, y+24, 11, '#ffd34d');
+      T('PTS: '+p.score, 280, y+24, 12, '#ffd34d');
+    });
+  }
 
   if(combo)T('ALINHADOS! TIRO COMBINADO DE ALTO DANO',W/2,H-60,18,'#8be8ff','center');
   const bw=380,bx=W/2-bw/2+70;X.fillStyle='rgba(0,0,0,.5)';X.fillRect(bx,16,bw,14);X.fillStyle='#ff9a47';X.fillRect(bx,16,bw*cl(B.hp/B.max,0,1),14);X.strokeStyle='#efe2c2';X.lineWidth=2;X.strokeRect(bx,16,bw,14);
   T('A ABERRAÇÃO · HUBBLE 1990 · '+(hard?'ESPECIALISTA':'NORMAL'),bx,46,13,'#efe2c2');
   if(tipT>0&&scene=='play'){X.globalAlpha=cl(tipT,0,1);X.font='17px Georgia,serif';X.textAlign='center';X.fillStyle='#ffe08a';X.fillText(tip,W/2,H-28);X.globalAlpha=1}
 
-  if(scene=='win'){
-    panel();T('IMAGEM NÍTIDA!',W/2,115,48,'#ffb15c','center');
-    const g=hits==0&&clock<80?'S':hits<=2?'A':'B';
-    T('Nota '+g,W/2,175,34,'#8be8ff','center');
-    T('Tempo: '+clock.toFixed(1)+' s · Acertos sofridos: '+hits+' · '+(hard?'Especialista':'Normal'),W/2,205,16,'#efe2c2','center');
-    let y=WR('Carta Estelar 1: o espelho do Hubble tinha um defeito de fabricação (aberração esférica). Em 1993, astronautas instalaram uma óptica corretiva e as imagens ficaram nítidas.',100,245,W-200,24,18);
-    y=WR('Carta Estelar 2: o telescópio que leva o nome da Nancy, o Roman, tem seu campo de visão cerca de 100 vezes maior que o do Hubble.',100,y+8,W-200,24,18,'#ff9ad9');
-    T('ENTER ou START para voltar',W/2,H-72,20,'#ffe08a','center')}
-  if(scene=='lose'){panel();T('IMAGEM BORRADA…',W/2,215,50,'#ff5a6a','center');T('A Aberração venceu desta vez.',W/2,265,20,'#efe2c2','center');T('ENTER ou START para tentar de novo',W/2,340,24,'#ffe08a','center')}
+  if(scene=='win'||scene=='lose'){
+    panel();
+    if(nP === 3){
+      T('RESULTADO DO MODO VERSUS',W/2,105,32,'#ffb15c','center');
+      T(winnerText,W/2,155,28,'#8be8ff','center');
+      T('PLACAR FINAL:',W/2,205,20,'#ffd34d','center');
+      T('Jogador 1: '+(P[0]?P[0].score:0)+' PONTOS',W/2,245,22,'#ff9a47','center');
+      T('Jogador 2: '+(P[1]?P[1].score:0)+' PONTOS',W/2,285,22,'#4fd8c4','center');
+      T('Pressione ENTER para voltar ao menu',W/2,H-70,20,'#ffe08a','center');
+    } else {
+      T(scene==='win'?'IMAGEM NÍTIDA!':'IMAGEM BORRADA…',W/2,115,44,scene==='win'?'#ffb15c':'#ff5a6a','center');
+      const g=hits==0&&clock<80?'S':hits<=2?'A':'B';
+      T('Nota '+g+' · Pontuação: '+(P[0]?P[0].score:0),W/2,170,28,'#8be8ff','center');
+      let y=WR('Carta Estelar: O telescópio Roman investiga a energia escura e exoplanetas com um campo de visão 100 vezes maior que o Hubble.',100,215,W-200,24,18);
+      T('ENTER para voltar',W/2,H-70,20,'#ffe08a','center');
+    }
+  }
 }
 
 let gpPrev=[{},{}];
@@ -564,7 +649,7 @@ function pollGP(){
     const k=KEYS[i],b=gp.buttons,B=x=>b[x]&&b[x].pressed,ax=gp.axes,A=(x,d)=>ax[x]!==undefined&&(d<0?ax[x]<-0.4:ax[x]>0.4);
     setK(k.u,B(12)||A(1,-1));setK(k.d,B(13)||A(1,1));setK(k.l,B(14)||A(0,-1));setK(k.r,B(15)||A(0,1));
     const f=B(0)||B(7);setK(k.f,f);setK(k.m,B(2)||B(6));setK(k.x,B(3)||B(1));
-    setK('Enter',B(9));if(i===0){setK('Space',f);setK('Digit2',B(3)||B(1));setK('Escape',B(8));}
+    setK('Enter',B(9));if(i===0){setK('Space',f);setK('Digit3',B(3)||B(1));setK('Escape',B(8));}
   }
 }
 
