@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ROMAN: Guardiã das Estrelas (protótipo)</title>
+<title>ROMAN: Guardiã das Estrelas (protótipo 2)</title>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#efe2c2;--ink:#1d1a2e;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -26,12 +26,12 @@ const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
 let A;
 function snd(f,d=.08,ty='square',v=.04,s=0){try{A=A||new AudioContext();const o=A.createOscillator(),g=A.createGain(),n=A.currentTime;o.type=ty;o.frequency.setValueAtTime(f,n);if(s)o.frequency.exponentialRampToValueAtTime(Math.max(30,f+s),n+d);g.gain.setValueAtTime(v,n);g.gain.exponentialRampToValueAtTime(.001,n+d);o.connect(g);g.connect(A.destination);o.start();o.stop(n+d)}catch(e){}}
 
-let scene='title',nP=1,P=[],B,bul=[],sh=[],pk=[],pt=[],t=0,shake=0,hs=0,tip='',tipT=0,hits=0,clock=0,tm=0,eclipse=0,combo=false;
+let scene='title',nP=1,P=[],B,bul=[],sh=[],pk=[],pt=[],t=0,shake=0,hs=0,tip='',tipT=0,hits=0,clock=0,tm=0,eclipse=0,combo=false,hard=1;
 const stars=[];for(let i=0;i<110;i++)stars.push({x:Math.random()*W,y:Math.random()*H,z:Math.random()*2.5+.5});
 const V=X.createRadialGradient(W/2,H/2,H*.45,W/2,H/2,H*1.0);V.addColorStop(0,'rgba(0,0,0,0)');V.addColorStop(1,'rgba(8,4,20,.65)');
 
-function start(n){
-  nP=n;P=[];
+function start(n,h){
+  hard=h;nP=n;P=[];
   for(let i=0;i<n;i++)P.push({i,x:110,y:H/2+(n>1?(i?70:-70):0),hp:3,mode:0,cd:0,inv:0,ex:0,alive:1,col:i?'#4fd8c4':'#ff9a47'});
   B={x:W-210,y:H/2,r:92,hp:720,max:720,t:0,ph:1,c1:1.5,c2:1,c3:2,c4:2,spin:0,stun:0,hit:0,open:0};
   bul=[];sh=[];pk=[];pt=[];hits=0;clock=0;eclipse=0;scene='intro';
@@ -61,7 +61,7 @@ function upP(p,dt){
 function tgt(){const a=P.filter(p=>p.alive);const p=a[Math.random()*a.length|0]||P[0];return Math.atan2(p.y-B.y,p.x-B.x)}
 function upB(dt){
   B.t+=dt;B.y=H/2+Math.sin(B.t*.9)*150;B.hit-=dt;B.stun-=dt;B.open-=dt;
-  const f=B.hp/B.max,ph=f>.66?1:f>.33?2:3;
+  const f=B.hp/B.max,ph=hard?(f>.66?1:f>.33?2:3):1;
   if(ph!=B.ph){B.ph=ph;tip=ph==2?'O espelho está ficando nítido… cuidado com o espiral!':'Quase nítido! A Aberração está furiosa.';tipT=3;shake=10}
   if(B.stun>0)return;
   B.c1-=dt;B.c2-=dt;B.c3-=dt;B.c4-=dt;
@@ -74,11 +74,12 @@ function step(dt){
   shake=Math.max(0,shake-60*dt);if(tipT>0)tipT-=dt;
   stars.forEach(s=>{s.x-=s.z*22*dt;if(s.x<0){s.x=W;s.y=Math.random()*H}});
   pt.forEach(p=>{p.x+=p.vx*p.life*dt*2;p.y+=p.vy*p.life*dt*2;p.life-=dt});pt=pt.filter(p=>p.life>0);
-  if(scene=='title'){if(K.Digit1==2||K.Numpad1==2)start(1);if(K.Digit2==2||K.Numpad2==2)start(2);return}
-  if(scene=='intro'){if(K.Enter==2){scene='ready';tm=1.5;snd(440,.15,'triangle',.06)}return}
+  if(scene=='title'){if(K.Digit1==2||K.Numpad1==2||K.Enter==2||K.Space==2){nP=1;scene='diff'}if(K.Digit2==2||K.Numpad2==2){nP=2;scene='diff'}return}
+  if(scene=='diff'){if(K.Digit1==2||K.Numpad1==2||K.KeyN==2||K.Enter==2||K.Space==2)start(nP,0);if(K.Digit2==2||K.Numpad2==2||K.KeyE==2)start(nP,1);if(K.Escape==2||K.Backspace==2)scene='title';return}
+  if(scene=='intro'){if(K.Enter==2||K.Space==2){scene='ready';tm=1.5;snd(440,.15,'triangle',.06)}return}
   if(scene=='ready'){tm-=dt;if(tm<=0){scene='play';snd(880,.25,'square',.05)}return}
-  if(scene=='win'){if(K.Enter==2)scene='title';return}
-  if(scene=='lose'){if(K.Enter==2)start(nP);return}
+  if(scene=='win'){if(K.Enter==2||K.Space==2)scene='title';return}
+  if(scene=='lose'){if(K.Enter==2||K.Space==2)start(nP,hard);return}
   if(hs>0){hs-=dt;return}
   clock+=dt;eclipse=Math.max(0,eclipse-dt);
   combo=P.length>1&&P.every(p=>p.alive)&&Math.abs(P[0].y-P[1].y)<46;
@@ -113,7 +114,7 @@ function ship(p){
 }
 function drawB(){
   X.save();X.translate(B.x,B.y);
-  X.filter=B.ph==1?'blur(7px)':B.ph==2?'blur(3.5px)':'none';
+  X.filter=hard?(B.ph==1?'blur(7px)':B.ph==2?'blur(3.5px)':'none'):'blur('+(7*Math.max(0,(B.hp/B.max-.1)/.9)).toFixed(1)+'px)';
   X.lineWidth=5;X.strokeStyle='#1d1a2e';
   X.fillStyle=B.hit>0?'#fff':'#e8d6a8';X.beginPath();X.arc(0,0,B.r,0,7);X.fill();X.stroke();
   X.fillStyle='#c9b27d';X.beginPath();X.arc(0,0,B.r*.74,0,7);X.fill();X.stroke();
@@ -144,10 +145,17 @@ function draw(){
 }
 function panel(){X.fillStyle='rgba(20,12,40,.88)';X.fillRect(70,50,W-140,H-100);X.strokeStyle='#efe2c2';X.lineWidth=4;X.strokeRect(70,50,W-140,H-100)}
 function hud(){
+  if(scene=='diff'){
+    T('ESCOLHA A DIFICULDADE',W/2,140,44,'#ffb15c','center');
+    T('1 · NORMAL',W/2,235,40,'#8be8ff','center');
+    T('O chefe ataca só com a primeira fase e o espelho vai ficando nítido a cada acerto.',W/2,272,17,'#efe2c2','center','Georgia,serif');
+    T('2 · ESPECIALISTA',W/2,355,40,'#ff9a47','center');
+    T('Três fases: o chefe fica nítido, com espiral e rajadas furiosas.',W/2,392,17,'#efe2c2','center','Georgia,serif');
+    T('ESC para voltar',W/2,465,16,'#efe2c2','center','Georgia,serif');return}
   if(scene=='title'){
     T('ROMAN',W/2,215,120,'#ffb15c','center');T('Guardiã das Estrelas',W/2,275,30,'#efe2c2','center');
     T('Pressione 1 para solo ou 2 para co-op',W/2,370,22,'#8be8ff','center');
-    X.font='16px Georgia,serif';X.textAlign='center';X.fillStyle='#efe2c2';X.fillText('Protótipo em homenagem a Nancy Grace Roman (1925 a 2018) · jogue no computador, com teclado',W/2,440);
+    X.font='16px Georgia,serif';X.textAlign='center';X.fillStyle='#efe2c2';X.fillText('Protótipo 2 em homenagem a Nancy Grace Roman (1925 a 2018) · jogue no computador, com teclado',W/2,440);
     X.save();X.translate(W/2,320);X.rotate(Math.sin(t*2)*.08);X.restore();return}
   if(scene=='intro'){
     panel();T('FASE 1 · HUBBLE, 1990',100,105,30,'#ffb15c');
@@ -166,13 +174,13 @@ function hud(){
   });
   if(combo)T('ALINHADOS! DANO EXTRA',W/2,H-60,18,'#8be8ff','center');
   const bw=380,bx=W/2-bw/2+70;X.fillStyle='rgba(0,0,0,.5)';X.fillRect(bx,16,bw,14);X.fillStyle='#ff9a47';X.fillRect(bx,16,bw*cl(B.hp/B.max,0,1),14);X.strokeStyle='#efe2c2';X.lineWidth=2;X.strokeRect(bx,16,bw,14);
-  T('A ABERRAÇÃO · HUBBLE 1990',bx,46,13,'#efe2c2');
+  T('A ABERRAÇÃO · HUBBLE 1990 · '+(hard?'ESPECIALISTA':'NORMAL'),bx,46,13,'#efe2c2');
   if(tipT>0&&scene=='play'){X.globalAlpha=cl(tipT,0,1);X.font='17px Georgia,serif';X.textAlign='center';X.fillStyle='#ffe08a';X.fillText(tip,W/2,H-28);X.globalAlpha=1}
   if(scene=='win'){
     panel();T('IMAGEM NÍTIDA!',W/2,115,48,'#ffb15c','center');
     const g=hits==0&&clock<80?'S':hits<=2?'A':'B';
     T('Nota '+g,W/2,175,34,'#8be8ff','center');
-    T('Tempo: '+clock.toFixed(1)+' s · Acertos sofridos: '+hits,W/2,205,16,'#efe2c2','center');
+    T('Tempo: '+clock.toFixed(1)+' s · Acertos sofridos: '+hits+' · '+(hard?'Especialista':'Normal'),W/2,205,16,'#efe2c2','center');
     let y=WR('Carta Estelar 1: o espelho do Hubble tinha um defeito de fabricação (aberração esférica). Em 1993, astronautas instalaram uma óptica corretiva e as imagens ficaram nítidas.',100,245,W-200,24,18);
     y=WR('Carta Estelar 2: o telescópio que leva o nome da Nancy, o Roman, foi lançado em 30 de agosto de 2026. Seu campo de visão é cerca de 100 vezes maior que o do Hubble e as primeiras imagens são esperadas para o início de 2027.',100,y+8,W-200,24,18,'#ff9ad9');
     T('ENTER para voltar ao início',W/2,H-72,20,'#ffe08a','center')}
