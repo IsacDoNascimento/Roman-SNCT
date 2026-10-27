@@ -50,19 +50,17 @@ function snd(f,d=.08,ty='square',v=.04,s=0){
 
 // BGM Chiptune Synth Generator
 let bgmStep=0, bgmTimer=0;
-const notes = [220, 261.63, 293.66, 329.63, 392.00, 440, 523.25]; // A Minor / Spacey Pentatonic
+const notes = [220, 261.63, 293.66, 329.63, 392.00, 440, 523.25];
 function updateBGM(dt){
   if(!musicOn || !A || scene==='title' || scene==='codex') return;
   bgmTimer += dt;
   if(bgmTimer >= 0.18){
     bgmTimer = 0;
     bgmStep = (bgmStep + 1) % 32;
-    // Bass note
     if(bgmStep % 4 === 0){
       const bFreq = (bgmStep < 16) ? 110 : 130.81;
       snd(bFreq, 0.15, 'sawtooth', 0.02, -10);
     }
-    // Arpeggio melody
     if(scene === 'play'){
       const melIndex = (bgmStep * 3 + (bgmStep % 5)) % notes.length;
       snd(notes[melIndex], 0.09, 'triangle', 0.015, 0);
@@ -132,7 +130,6 @@ function upB(dt){
   if(B.c2<=0){const a=tgt();(ph==3?[-.18,0,.18]:[0]).forEach(d=>bul.push({x:B.x-40,y:B.y,vx:Math.cos(a+d)*260,vy:Math.sin(a+d)*260,r:6}));B.c2=ph==1?1.2:.9}
   if(ph>=2&&B.c3<=0){B.spin+=.5;bul.push({x:B.x,y:B.y,vx:Math.cos(B.spin*3.1)*200,vy:Math.sin(B.spin*3.1)*200,r:6});B.c3=.11}
   if(B.c4<=0){pk.push({x:B.x-70,y:B.y+(Math.random()-.5)*120,vx:-150,vy:(Math.random()-.5)*60,r:12});B.c4=2.6}
-  // Spawn Asteroides/Detritos
   if(B.c5<=0){
     asteroids.push({x:W+30,y:40+Math.random()*(H-80),vx:-180-Math.random()*100,vy:(Math.random()-.5)*40,r:14+Math.random()*10,hp:2});
     B.c5=2.2+Math.random()*1.5;
@@ -145,7 +142,6 @@ function step(dt){
   shake=Math.max(0,shake-60*dt);if(tipT>0)tipT-=dt;
   flashR=Math.max(0,flashR-dt);flashW=Math.max(0,flashW-dt);
 
-  // Distorção Gravitacional nas estrelas se o coronógrafo/eclipse estiver ativo
   const dist = eclipse > 0 ? 3.5 : 1.0;
   stars.forEach(s=>{
     s.x-=s.z*22*dist*dt;
@@ -156,8 +152,7 @@ function step(dt){
   pt.forEach(p=>{p.x+=p.vx*p.life*dt*2;p.y+=p.vy*p.life*dt*2;p.life-=dt});pt=pt.filter(p=>p.life>0);
 
   if(scene=='title'){
-    if(K.Digit1==2||K.Numpad1==2||K.Enter==2||K.Space==2){nP=1;scene='diff'}
-    if(K.Digit2==2||K.Numpad2==2){nP=2;scene='diff'}
+    if(K.Enter==2||K.Space==2){scene='mode'}
     if(K.KeyC==2){scene='codex'}
     return
   }
@@ -165,10 +160,16 @@ function step(dt){
     if(K.Escape==2||K.Backspace==2||K.Enter==2||K.Space==2||K.KeyC==2)scene='title';
     return
   }
+  if(scene=='mode'){
+    if(K.Digit1==2||K.Numpad1==2||K.Enter==2||K.Space==2){nP=1;scene='diff'}
+    if(K.Digit2==2||K.Numpad2==2||K.KeyE==2){nP=2;scene='diff'}
+    if(K.Escape==2||K.Backspace==2)scene='title';
+    return
+  }
   if(scene=='diff'){
     if(K.Digit1==2||K.Numpad1==2||K.KeyN==2||K.Enter==2||K.Space==2)start(nP,0);
     if(K.Digit2==2||K.Numpad2==2||K.KeyE==2)start(nP,1);
-    if(K.Escape==2||K.Backspace==2)scene='title';
+    if(K.Escape==2||K.Backspace==2)scene='mode';
     return
   }
   if(scene=='intro'){if(K.Enter==2||K.Space==2){scene='ready';tm=1.5;snd(440,.15,'triangle',.06)}return}
@@ -181,7 +182,6 @@ function step(dt){
   combo=P.length>1&&P.every(p=>p.alive)&&Math.abs(P[0].y-P[1].y)<46;
   P.forEach(p=>upP(p,dt));upB(dt);
 
-  // Bullets & Asteroids logic
   bul.forEach(b=>{b.x+=b.vx*dt;b.y+=b.vy*dt});
   bul=bul.filter(b=>b.x>-20&&b.x<W+20&&b.y>-20&&b.y<H+20);
 
@@ -193,7 +193,6 @@ function step(dt){
   pwItems.forEach(pw=>{pw.x+=pw.vx*dt;pw.y+=pw.vy*dt});
   pwItems=pwItems.filter(pw=>pw.x>-30);
 
-  // Player collisions with enemy bullets
   P.forEach(p=>{
     if(!p.alive||p.inv>0)return;
     const b=bul.find(b=>Math.hypot(b.x-p.x,b.y-p.y)<b.r+7);
@@ -202,7 +201,6 @@ function step(dt){
     if(ast){asteroids=asteroids.filter(q=>q!==ast);hurt(p)}
   });
 
-  // Power-up pick up
   pwItems=pwItems.filter(pw=>{
     const p=P.find(p=>p.alive&&Math.hypot(pw.x-p.x,pw.y-p.y)<pw.r+18);
     if(p){
@@ -215,7 +213,6 @@ function step(dt){
     return true;
   });
 
-  // Pick orbs for Coronagraph
   pk=pk.filter(o=>{
     const p=P.find(p=>p.alive&&Math.hypot(o.x-p.x,o.y-p.y)<o.r+16);
     if(p){
@@ -224,12 +221,10 @@ function step(dt){
     return true;
   });
 
-  // Player shots collisions with Boss and Asteroids
   sh=sh.filter(s=>{
     s.x+=s.vx*dt;s.y+=s.vy*dt;
     if(s.x>W+30||s.y<-20||s.y>H+20)return false;
 
-    // Hit Asteroids
     const ast=asteroids.find(a=>Math.hypot(s.x-a.x,s.y-a.y)<a.r+6);
     if(ast){
       ast.hp-=s.d;
@@ -238,7 +233,6 @@ function step(dt){
         asteroids=asteroids.filter(q=>q!==ast);
         boom(ast.x,ast.y,'#e6c89c',16);
         snd(220,.15,'sawtooth',.06,-50);
-        // Chance to drop science power-up
         if(Math.random()<0.45){
           const types=['spec','grav','solar'], cols=['#4fd8c4','#ffd34d','#4dff88'];
           const idx=Math.floor(Math.random()*types.length);
@@ -248,7 +242,6 @@ function step(dt){
       return false;
     }
 
-    // Hit Boss
     if(Math.hypot(s.x-B.x,s.y-B.y)<B.r+4){
       B.hp-=s.d*(B.stun>0?2:1);B.hit=.06;
       boom(s.x,s.y,'#ffe08a',combo?5:2);
@@ -274,8 +267,6 @@ function bg(){
 
 function ship(p){
   X.save();X.translate(p.x,p.y);if(p.inv>0&&((p.inv*20)|0)%2)X.globalAlpha=.35;
-  
-  // Shield effect
   if(p.shield > 0){
     X.strokeStyle='#ffd34d';X.lineWidth=3;X.beginPath();X.arc(0,0,28+Math.sin(t*10)*2,0,7);X.stroke();
     X.fillStyle='rgba(255,211,77,0.15)';X.fill();
@@ -309,8 +300,6 @@ function drawB(){
 function drawTouchOverlay(){
   if(!isTouch)return;
   X.save();X.globalAlpha=0.35;X.lineWidth=3;X.strokeStyle='#efe2c2';X.fillStyle='#efe2c2';
-  
-  // Virtual D-Pad (Left)
   const cx=100, cy=H-100;
   X.beginPath();X.arc(cx,cy,55,0,7);X.stroke();
   T('▲',cx,cy-25,20,'#efe2c2','center');
@@ -318,7 +307,6 @@ function drawTouchOverlay(){
   T('◄',cx-30,cy+7,20,'#efe2c2','center');
   T('►',cx+30,cy+7,20,'#efe2c2','center');
 
-  // Action Buttons (Right)
   const bx=W-100, by=H-100;
   X.beginPath();X.arc(bx,by+20,28,0,7);X.stroke();T('TIRO',bx,by+26,12,'#efe2c2','center');
   X.beginPath();X.arc(bx-55,by-10,24,0,7);X.stroke();T('MODO',bx-55,by-5,11,'#efe2c2','center');
@@ -331,17 +319,15 @@ function draw(){
   X.save();if(shake>0)X.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);
   bg();
 
-  if(scene!='title'&&scene!='codex'&&scene!='diff'&&scene!='intro'){
+  if(scene!='title'&&scene!='codex'&&scene!='mode'&&scene!='diff'&&scene!='intro'){
     if(scene!='win')drawB();
 
-    // Render Asteroids
     asteroids.forEach(a=>{
       X.fillStyle='#8c7355';X.strokeStyle='#1d1a2e';X.lineWidth=3;
       X.beginPath();X.arc(a.x,a.y,a.r,0,7);X.fill();X.stroke();
       X.fillStyle='#69533a';X.beginPath();X.arc(a.x-3,a.y-3,a.r*0.4,0,7);X.fill();
     });
 
-    // Render Science Power-ups
     pwItems.forEach(pw=>{
       X.fillStyle=pw.col;X.strokeStyle='#fff';X.lineWidth=2.5;
       X.beginPath();X.arc(pw.x,pw.y,pw.r+Math.sin(t*8)*2,0,7);X.fill();X.stroke();
@@ -351,7 +337,6 @@ function draw(){
     pk.forEach(o=>{X.fillStyle='#ff7ad9';X.strokeStyle='#fff';X.lineWidth=3;X.beginPath();X.arc(o.x,o.y,o.r+Math.sin(t*10)*2,0,7);X.fill();X.stroke()});
     bul.forEach(b=>{X.fillStyle='#fff3c4';X.strokeStyle='#1d1a2e';X.lineWidth=2.5;X.beginPath();X.arc(b.x,b.y,b.r,0,7);X.fill();X.stroke()});
 
-    // Shot beams
     sh.forEach(s=>{
       X.fillStyle=combo?'#ffea78':(s.m?'#8be8ff':'#ffe08a');
       X.fillRect(s.x-(s.m?7:16),s.y-(s.m?(combo?4:2):3),s.m?14:(combo?40:32),s.m?(combo?8:4):(combo?10:6));
@@ -363,7 +348,6 @@ function draw(){
   pt.forEach(p=>{X.fillStyle=p.col;X.globalAlpha=cl(p.life*2,0,1);X.fillRect(p.x,p.y,p.r,p.r)});X.globalAlpha=1;
   X.restore();
 
-  // Screen Impact Flashes
   if(flashR>0){X.fillStyle='rgba(255,60,60,'+flashR+')';X.fillRect(0,0,W,H);}
   if(flashW>0){X.fillStyle='rgba(255,255,255,'+flashW+')';X.fillRect(0,0,W,H);}
 
@@ -388,6 +372,13 @@ function hud(){
     T('Pressione ESPAÇO, ENTER ou C para voltar',W/2,H-70,18,'#ffe08a','center');
     return;
   }
+  if(scene=='mode'){
+    T('ESCOLHA O MODO DE JOGO',W/2,140,44,'#ffb15c','center');
+    T('1 (A) · SOLO (1 JOGADOR)',W/2,235,40,'#8be8ff','center');
+    T('Controle o telescópio sozinho com alternância de modos e o coronógrafo.',W/2,272,17,'#efe2c2','center','Georgia,serif');
+    T('2 (Y/B) · CO-OP (2 JOGADORES)',W/2,355,40,'#ff9a47','center');
+    T('Jogue em dupla! Alinhem-se na mesma altura para disparar o tiro combinado de alto dano.',W/2,392,17,'#efe2c2','center','Georgia,serif');
+    T('ESC ou SELECT para voltar ao menu',W/2,465,16,'#efe2c2','center','Georgia,serif');return}
   if(scene=='diff'){
     T('ESCOLHA A DIFICULDADE',W/2,140,44,'#ffb15c','center');
     T('1 (A) · NORMAL',W/2,235,40,'#8be8ff','center');
@@ -397,7 +388,7 @@ function hud(){
     T('ESC ou SELECT para voltar',W/2,465,16,'#efe2c2','center','Georgia,serif');return}
   if(scene=='title'){
     T('ROMAN',W/2,195,120,'#ffb15c','center');T('Guardiã das Estrelas',W/2,255,30,'#efe2c2','center');
-    T('Pressione 1 (A) para Solo ou 2 (Y/B) para Co-Op',W/2,335,22,'#8be8ff','center');
+    T('Pressione ENTER / ESPAÇO / START para Iniciar',W/2,335,22,'#8be8ff','center');
     T('Pressione C para o CODEX CIENTÍFICO DA NASA',W/2,375,18,'#ffd34d','center');
     X.font='16px Georgia,serif';X.textAlign='center';X.fillStyle='#efe2c2';X.fillText('Protótipo Expandido · jogue com Teclado, Controle ou Touch Screen',W/2,435);
     X.save();X.translate(W/2,320);X.rotate(Math.sin(t*2)*.08);X.restore();return}
@@ -436,23 +427,20 @@ function hud(){
   if(scene=='lose'){panel();T('IMAGEM BORRADA…',W/2,215,50,'#ff5a6a','center');T('A Aberração venceu desta vez.',W/2,265,20,'#efe2c2','center');T('ENTER ou START para tentar de novo',W/2,340,24,'#ffe08a','center')}
 }
 
-// Touch Input Handling
 addEventListener('touchstart', e=>{
   isTouch=true; initAudio();
   const rect=C.getBoundingClientRect(), scaleX=W/rect.width, scaleY=H/rect.height;
   for(let i=0; i<e.touches.length; i++){
     const t=e.touches[i], tx=(t.clientX-rect.left)*scaleX, ty=(t.clientY-rect.top)*scaleY;
     if(tx < W/2){
-      // Left DPad region
       if(ty < H-110) K.KeyW=2;
       else if(ty > H-60) K.KeyS=2;
       if(tx < 80) K.KeyA=2;
       else if(tx > 120) K.KeyD=2;
     }else{
-      // Right Action Buttons
-      if(ty > H-100 && tx > W-130) K.KeyJ=2; // Fire
-      else if(tx < W-110 && ty < H-60) K.KeyK=2; // Mode
-      else if(ty < H-100) K.KeyL=2; // Special
+      if(ty > H-100 && tx > W-130) K.KeyJ=2;
+      else if(tx < W-110 && ty < H-60) K.KeyK=2;
+      else if(ty < H-100) K.KeyL=2;
       if(scene!=='play') K.Enter=2;
     }
   }
