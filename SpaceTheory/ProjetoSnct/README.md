@@ -22,3 +22,7 @@ Fontes principais (NASA):
 - https://science.nasa.gov/mission/roman-space-telescope/
 
 A citação no rodapé é uma tradução resumida de uma declaração de Roman publicada em sua entrevista à NASA. Consulte a fonte original para o texto em inglês.
+
+## Quiz Space Theory
+
+A seção 06 da página inicial leva para quiz.html. O quiz tem uma sequência única de 14 perguntas: primeiro as 6 do Fundamental I e depois as 8 do Fundamental II. Inclui explicações após cada resposta, progresso, pontuação e opção de jogar novamente. As perguntas usam os fatos e referências da NASA já listados neste projeto.
