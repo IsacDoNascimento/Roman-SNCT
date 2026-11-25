@@ -246,7 +246,7 @@ function start(n,h){
   const numPlayers = (n === 3) ? 2 : n; // Mode 3 = Versus
   for(let i=0;i<numPlayers;i++){
     P.push({
-      i, x:110, y:H/2+(numPlayers>1?(i?70:-70):0), tilt:0, hp:4, mode:0, cd:0, inv:0, ex:0, alive:1,
+      i, x:110, y:H/2+(numPlayers>1?(i?70:-70):0), tilt:0, hp:4, mode:0, cd:0, inv:0, ex:0, alive:1, markerSide:i?'below':'above',
       col:i?'#4fd8c4':'#ff9a47', boost:0, shield:0, score:0, streak:0, multiplier:1.0
     });
   }
@@ -797,6 +797,33 @@ function ship(p){
   X.restore();
 }
 
+function drawPlayerMarker(p,playerIndex){
+  const width=32,height=18,preferAbove=playerIndex===0;
+  if(!p.markerSide)p.markerSide=preferAbove?'above':'below';
+
+  // Troca de lado apenas perto das bordas, com margem de retorno para evitar saltos repetidos.
+  if(p.markerSide==='above'&&p.y<68)p.markerSide='below';
+  else if(p.markerSide==='below'&&preferAbove&&p.y>86)p.markerSide='above';
+  if(p.markerSide==='below'&&p.y>H-68)p.markerSide='above';
+  else if(p.markerSide==='above'&&!preferAbove&&p.y<H-86)p.markerSide='below';
+
+  let above=p.markerSide==='above';
+  if(above&&p.y-52<4){above=false;p.markerSide='below'}
+  if(!above&&p.y+34+height>H-4){above=true;p.markerSide='above'}
+  const markerOffset=focusMinigame?.active?p.x+40:(playerIndex===0?p.x-50:p.x+18);
+  const markerX=cl(markerOffset,4,W-width-4);
+  const markerY=above?p.y-52:p.y+34;
+  const color=p.col||'#8be8ff',label='P'+(playerIndex+1);
+
+  X.save();roundedPanelPath(markerX,markerY,width,height,6);
+  X.fillStyle='rgba(5,10,28,.94)';X.fill();
+  X.strokeStyle=color;X.lineWidth=1.5;X.stroke();
+  X.font='700 10px system-ui,sans-serif';X.textAlign='center';X.textBaseline='middle';
+  X.lineWidth=2.5;X.strokeStyle='rgba(5,10,28,.95)';X.strokeText(label,markerX+width/2,markerY+height/2+.5);
+  X.fillStyle=color;X.fillText(label,markerX+width/2,markerY+height/2+.5);
+  X.restore();
+}
+
 function drawProjectile(s){
   const wide=s.m===1;
   const image=wide?SPRITES.shotBlueGlow:SPRITES.shotGoldGlow,source=SPRITES.shot;
@@ -925,7 +952,11 @@ function renderWorldObjects(){
 
   sh.forEach(drawProjectile);
 
-  P.forEach(p=>{if(p.alive)ship(p)});
+  P.forEach((p,i)=>{
+    if(!p.alive)return;
+    ship(p);
+    if(i===0||P.length>1)drawPlayerMarker(p,i);
+  });
 }
 
 function drawTouchOverlay(){
@@ -1307,9 +1338,9 @@ function drawQuit(){
 
 function drawFocusMinigame(){
   const f=focusMinigame;if(!f?.active)return;
-  const px=12,py=82,pw=180,ph=430,trackX=px+32,trackY=158,trackH=246,trackW=42,half=f.zoneHeight/2;
+  const px=12,py=82,pw=180,ph=430,trackX=px+12,trackY=158,trackH=246,trackW=30,half=f.zoneHeight/2;
   const aligned=Math.abs(f.focusY-f.targetY)<half-7;
-  X.save();roundedPanelPath(px,py,pw,ph,15);X.fillStyle='rgba(5,10,28,.88)';X.fill();X.strokeStyle='rgba(139,232,255,.7)';X.lineWidth=1.5;X.stroke();
+  X.save();roundedPanelPath(px,py,pw,ph,15);X.fillStyle='rgba(5,10,28,.54)';X.fill();X.strokeStyle='rgba(139,232,255,.7)';X.lineWidth=1.5;X.stroke();
   T('FOCO FINAL',px+pw/2,py+28,18,'#ffb15c','center','700 18px system-ui,sans-serif');
   T('ESTABILIZE A CAPTURA',px+pw/2,py+49,10,'#b8cee5','center','600 10px system-ui,sans-serif');
   // A faixa verde ganha velocidade quando o botão fica pressionado e cai ao soltá-lo.
@@ -1319,7 +1350,7 @@ function drawFocusMinigame(){
   X.strokeStyle='rgba(220,255,230,.9)';X.lineWidth=1.5;X.strokeRect(trackX+3,zoneY,trackW-6,f.zoneHeight);
   const starGlow=X.createRadialGradient(trackX+trackW/2,f.targetY,1,trackX+trackW/2,f.targetY,25);starGlow.addColorStop(0,'#fff');starGlow.addColorStop(.28,'#ffe08a');starGlow.addColorStop(1,'rgba(255,176,92,0)');X.fillStyle=starGlow;X.beginPath();X.arc(trackX+trackW/2,f.targetY,25,0,Math.PI*2);X.fill();
   X.fillStyle='#fff2bd';X.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,r=i%2?5:11,sx=trackX+trackW/2+Math.cos(a)*r,sy=f.targetY+Math.sin(a)*r;i?X.lineTo(sx,sy):X.moveTo(sx,sy)}X.closePath();X.fill();
-  const meterX=px+105,meterW=22;X.fillStyle='rgba(215,226,245,.14)';X.fillRect(meterX,trackY,meterW,trackH);X.fillStyle='#8be8ff';X.fillRect(meterX,trackY+trackH*(1-f.progress/100),meterW,trackH*f.progress/100);X.strokeStyle='#d5e2f7';X.lineWidth=1.5;X.strokeRect(meterX,trackY,meterW,trackH);
+  const meterX=px+46,meterW=13;X.fillStyle='rgba(215,226,245,.14)';X.fillRect(meterX,trackY,meterW,trackH);X.fillStyle='#8be8ff';X.fillRect(meterX,trackY+trackH*(1-f.progress/100),meterW,trackH*f.progress/100);X.strokeStyle='#d5e2f7';X.lineWidth=1.5;X.strokeRect(meterX,trackY,meterW,trackH);
   T('CAPTURA',meterX+meterW/2,trackY-10,10,'#d5e2f7','center','600 10px system-ui,sans-serif');
   T(Math.floor(f.progress)+'%',meterX+meterW/2,trackY+trackH+20,14,'#ffe08a','center','700 14px system-ui,sans-serif');
   X.strokeStyle='rgba(139,232,255,.18)';X.lineWidth=1;X.beginPath();X.moveTo(px+18,py+356);X.lineTo(px+pw-18,py+356);X.stroke();
@@ -1371,7 +1402,7 @@ function drawPlayerHudCard(p,i,focusLayout=false){
     X.restore();return;
   }
   const x=14,y=10+i*53,w=332,h=48;
-  X.save();roundedPanelPath(x,y,w,h,8);X.fillStyle='rgba(5,10,28,.72)';X.fill();X.strokeStyle='rgba(139,232,255,.18)';X.lineWidth=1;X.stroke();
+  X.save();roundedPanelPath(x,y,w,h,8);X.fillStyle='rgba(5,10,28,.72)';X.fill();X.strokeStyle=color;X.globalAlpha=.38;X.lineWidth=1;X.stroke();X.globalAlpha=1;
   X.fillStyle=color;X.fillRect(x+1,y+8,3,h-16);
   T('JOGADOR '+(i+1)+' · '+player,x+10,y+17,10,color,'left','700 10px system-ui,sans-serif');
   X.font='17px Georgia,serif';X.textAlign='left';X.fillStyle=p.alive?'#ff5a6a':'#8a8492';X.fillText(health,x+100,y+18);

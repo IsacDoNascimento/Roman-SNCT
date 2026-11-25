@@ -232,3 +232,11 @@ A foto de Nancy agora termina antes da faixa de comandos do briefing. Os comando
 Na aba de controle, os cabeçalhos dos grupos foram afastados das abas de jogador e das linhas de remapeamento. As quatro direções continuam identificadas por setas, e cada ação mantém seu comando atribuído e os estados de seleção/espera.
 
 O painel Foco Final foi movido para a esquerda, sem mudar coordenadas da faixa, progresso, tempo ou entrada. Enquanto ele está ativo, os cartões dos jogadores ficam no alto ao lado do painel, deixando o feixe e o alvo visíveis. A HUD agora agrupa P1 e P2 em cartões identificados, relacionando vidas, pontos e multiplicador, telescópio, super, bônus ativos e estado do dispositivo conectado. Nenhuma regra de jogo foi alterada.
+
+### 23. Identificação visual de P1 e P2 durante a partida
+
+Cada nave ativa agora recebe um pequeno marcador estável com o rótulo explícito “P1” ou “P2”. O contorno e o texto usam a cor já associada ao jogador, e o cartão correspondente da HUD recebe o mesmo contorno, relacionando visualmente nave, vidas, pontuação, telescópio e demais dados. O contraste escuro do marcador mantém a leitura sobre o fundo espacial; a posição se ajusta perto das bordas da tela para permanecer visível sem cintilar.
+
+P1 aparece também em partidas solo; P2 só recebe marcador quando existe um segundo jogador ativo na partida, e o marcador acompanha a nave enquanto ela está visível. Durante o Foco Final, a posição do rótulo evita as barras do minigame e o painel fica mais translúcido para preservar a leitura do jogo ao fundo. Nenhuma regra, controle, pontuação ou vida foi alterada.
+
+Para conferir, abra `html/index.html`, escolha **Jogar → Cooperativo** e inicie uma fase. Mova as duas naves: P1 deve manter seu rótulo laranja e P2 o rótulo verde-água, cada um acompanhado pelo cartão da mesma cor na HUD. Entre no Foco Final para conferir os rótulos junto às barras e ao feixe.
