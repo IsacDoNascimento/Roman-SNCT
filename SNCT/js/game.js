@@ -5,7 +5,12 @@ const SPRITES={
   shipP2:[1,2,3,4].map(i=>sprite('ship-p2-'+i)),
   shot:sprite('shot-single'),
   shotGoldGlow:null,
-  shotBlueGlow:null
+  shotBlueGlow:null,
+  controlPad:sprite('control-pad'),
+  controlDpad:sprite('control-dpad'),
+  controlFace:['a','b','x','y'].map(name=>sprite('control-'+name)),
+  controlFrame:sprite('control-frame'),
+  controlFrameFocus:sprite('control-frame-focus')
 };
 SPRITES.shot.addEventListener('load',()=>{
   const makeShotVariant=(blue)=>{
@@ -1050,6 +1055,126 @@ function drawImageContained(img,x,y,w,h){
   X.drawImage(img,x+(w-dw)/2,y+(h-dh)/2,dw,dh);return true;
 }
 
+
+function drawControlFrame(x,y,w,h,focused=false){
+  const image=focused?SPRITES.controlFrameFocus:SPRITES.controlFrame;
+  if(image&&image.complete&&image.naturalWidth)X.drawImage(image,x,y,w,h);
+}
+function drawGenericGamepad(x,y,w,h){
+  const scale=Math.min(w/240,h/130),dw=240*scale,dh=130*scale;
+  X.save();X.translate(x+(w-dw)/2,y+(h-dh)/2);X.scale(scale,scale);
+  X.beginPath();X.moveTo(48,19);X.bezierCurveTo(66,7,91,11,112,14);X.bezierCurveTo(132,11,160,10,179,18);X.bezierCurveTo(199,18,211,32,217,51);X.lineTo(231,90);X.bezierCurveTo(238,112,219,128,202,115);X.lineTo(169,82);X.lineTo(72,82);X.lineTo(39,115);X.bezierCurveTo(22,128,4,112,11,90);X.lineTo(24,50);X.bezierCurveTo(29,34,35,24,48,19);X.closePath();
+  const body=X.createLinearGradient(0,12,0,120);body.addColorStop(0,'#f5fcff');body.addColorStop(1,'#c8e1e8');X.fillStyle=body;X.strokeStyle='#205768';X.lineWidth=3;X.fill();X.stroke();
+  [[76,49],[151,56]].forEach(([cx,cy])=>{X.fillStyle='rgba(102,153,166,.16)';X.beginPath();X.arc(cx,cy,18,0,Math.PI*2);X.fill();X.strokeStyle='#75aebb';X.lineWidth=2;X.stroke();X.fillStyle='#d8edf1';X.beginPath();X.arc(cx,cy,12,0,Math.PI*2);X.fill();X.strokeStyle='#205768';X.lineWidth=2;X.stroke()});
+  X.fillStyle='#d9f0f4';X.strokeStyle='#205768';X.lineWidth=2;roundedPanelPath(37,43,36,12,3);X.fill();X.stroke();roundedPanelPath(49,31,12,36,3);X.fill();X.stroke();
+  [[190,39],[203,53],[177,53],[190,67]].forEach(([cx,cy])=>{X.fillStyle='#e8f7f9';X.strokeStyle='#498594';X.lineWidth=2;X.beginPath();X.arc(cx,cy,7,0,Math.PI*2);X.fill();X.stroke()});
+  X.fillStyle='rgba(62,124,138,.22)';X.strokeStyle='#75aebb';X.lineWidth=1.5;X.beginPath();X.ellipse(120,30,11,4,0,0,Math.PI*2);X.fill();X.stroke();
+  X.restore();
+}
+function drawControllerIllustration(x,y,w,h,pad=null,forceController=false){
+  X.save();roundedPanelPath(x,y,w,h,10);
+  X.fillStyle='rgba(6,12,31,.72)';X.fill();
+  X.strokeStyle='rgba(139,232,255,.32)';X.lineWidth=1;X.stroke();
+  const showController=forceController||!!pad?.connected;
+  if(showController){
+    const xboxArt=!!pad?.connected&&controllerFamily(pad)==='xbox';
+    if(xboxArt&&SPRITES.controlPad.complete&&SPRITES.controlPad.naturalWidth)drawImageContained(SPRITES.controlPad,x+7,y+4,w-14,h-23);
+    else drawGenericGamepad(x+7,y+4,w-14,h-23);
+    const name=pad?.connected?'CONTROLE '+controllerFamily(pad).toUpperCase():'MODELO GENÉRICO';
+    T(name,x+w/2,y+h-7,10,'#cfeeff','center','700 10px system-ui,sans-serif');
+  }else if(lastInputDevice==='touch'){
+    const phoneW=Math.min(w*.28,35),phoneH=Math.min(h*.62,56),px=x+(w-phoneW)/2,py=y+8;
+    roundedPanelPath(px,py,phoneW,phoneH,6);X.fillStyle='rgba(139,232,255,.16)';X.fill();X.strokeStyle='#8be8ff';X.lineWidth=1.5;X.stroke();
+    X.fillStyle='#ffe08a';X.beginPath();X.arc(px+phoneW/2,py+phoneH*.55,5,0,Math.PI*2);X.fill();
+    T('TOQUE',x+w/2,y+h-7,10,'#cfeeff','center','700 10px system-ui,sans-serif');
+  }else{
+    const keySize=Math.min(w*.17,24),gap=5,startX=x+w/2-keySize*1.5,topY=y+9;
+    [['W',1,0],['A',0,1],['S',1,1],['D',2,1]].forEach(([label,col,row])=>{
+      const kx=startX+col*(keySize+gap),ky=topY+row*(keySize+gap);
+      roundedPanelPath(kx,ky,keySize,keySize,4);X.fillStyle='rgba(139,232,255,.17)';X.fill();X.strokeStyle='rgba(139,232,255,.72)';X.lineWidth=1;X.stroke();
+      T(label,kx+keySize/2,ky+keySize*.68,11,'#eaf7ff','center','700 11px system-ui,sans-serif');
+    });
+    T('TECLADO',x+w/2,y+h-7,10,'#cfeeff','center','700 10px system-ui,sans-serif');
+  }
+  X.restore();
+}
+function drawControlRemapButton(id,label,binding,pad,x,y,w,h,selected,waiting){
+  const pulse=.5+.5*Math.sin(t*3.2),radius=Math.min(10,h*.28);
+  X.save();roundedPanelPath(x,y,w,h,radius);
+  X.fillStyle=waiting?'rgba(115,82,37,.72)':selected?'rgba(36,92,126,.72)':'rgba(8,15,34,.82)';
+  X.fill();
+  X.strokeStyle=waiting?'#ffe08a':selected?'#8ce8ff':'rgba(177,207,232,.52)';
+  X.lineWidth=selected||waiting?2:1.2;
+  if(selected||waiting){X.shadowColor=waiting?'#ffcf66':'#61d8ff';X.shadowBlur=(selected||waiting)?5+4*pulse:0}
+  X.stroke();X.shadowBlur=0;
+  if(selected||waiting){X.fillStyle=waiting?'#ffcf66':'#8ce8ff';X.fillRect(x+5,y+7,3,h-14)}
+  const padRight=9,iconSize=Math.min(21,h-8),showFace=!!pad?.connected&&controllerFamily(pad)==='xbox'&&Number.isInteger(binding)&&binding>=0&&binding<4;
+  const value=waiting?'AGUARDANDO…':gamepadButtonName(binding,pad);
+  X.textAlign='left';X.textBaseline='middle';X.fillStyle=waiting?'#ffe08a':selected?'#fff2d4':'#d9e5f5';
+  let valueWidth=showFace?iconSize+padRight+2:Math.max(58,X.measureText(value).width+padRight);
+  const available=w-18-valueWidth-8;
+  const labelSize=cl(12.5*(available/164),10,12.5);
+  X.font='700 '+labelSize+'px system-ui,sans-serif';
+  X.fillText(label,x+13,y+h/2,Math.max(30,available));
+  if(showFace){
+    const icon=SPRITES.controlFace[binding];
+    if(icon&&icon.complete&&icon.naturalWidth)drawImageContained(icon,x+w-iconSize-padRight,y+(h-iconSize)/2,iconSize,iconSize);
+  }else{
+    X.font='700 11px system-ui,sans-serif';X.textAlign='right';
+    X.fillStyle=waiting?'#ffe08a':'#8be8ff';X.fillText(value,x+w-padRight,y+h/2,Math.max(42,valueWidth));
+  }
+  X.restore();uiButtons.push({id,x,y,w,h});
+}
+function drawPhaseIntro(){
+  panel();
+  T('BRIEFING DE MISSÃO',W*.09,H*.135,13,'#8be8ff','left','700 13px system-ui,sans-serif');
+  T('BOSS '+(currentBossIndex+1)+' / '+BOSSES.length+' · '+BOSSES[currentBossIndex].name,W*.09,H*.195,23,'#ffb15c','left','700 23px system-ui,sans-serif');
+
+  const portraitX=W*.09,portraitY=H*.255,portraitW=W*.215,portraitH=H*.405;
+  X.save();roundedPanelPath(portraitX,portraitY,portraitW,portraitH,12);X.fillStyle='rgba(5,10,27,.82)';X.fill();X.strokeStyle='rgba(139,232,255,.56)';X.lineWidth=1.5;X.stroke();
+  if(!drawImageContained(CODEX_IMAGES.nancy,portraitX+6,portraitY+6,portraitW-12,portraitH-12))T('NANCY GRACE ROMAN',portraitX+portraitW/2,portraitY+portraitH/2,11,'#cbd7ed','center','700 11px system-ui,sans-serif');
+  X.restore();
+
+  const textX=W*.34,textW=W*.55;
+  T('RELATÓRIO',textX,H*.255,12,'#ffe08a','left','700 12px system-ui,sans-serif');
+  const primary=nP===3
+    ?'“Bem-vindos ao Modo Versus na mesma tela! Vocês jogam juntos na mesma arena como no Co-op, mas a pontuação é individual. Quem somar mais pontos destruindo asteroides, acertando o chefe e conseguindo o K.O. Bonus de 2.000 pontos será o vencedor!”'
+    :(currentBossIndex===0
+      ?'“Aqui é Nancy Grace Roman. Em 1960 virei a primeira astrônoma-chefe da NASA e lutei por telescópios no espaço. Agora o Hubble observa AG Carinae, uma estrela envolta por uma enorme casca de gás. Ajude o satélite a registrar essa imagem!”'
+      :'“Novo sinal detectado! Enfrente o alvo e prepare o satélite. Depois da batalha, o Foco Final acontece aqui mesmo na arena.”');
+  let storyY=WR(primary,textX,H*.29,textW,H*.043,16,'#efe2c2')+4;
+  const focusHint=useGamepadHints()
+    ?'No Foco Final, segure '+controllerActionName('fire')+' para subir a faixa; solte para descer.'
+    :lastInputDevice==='touch'
+      ?'No Foco Final, toque e segure para subir a faixa; solte para descer.'
+      :'No Foco Final, segure Espaço para subir a faixa; solte para descer.';
+  const supplementary='Campanha com três bosses: AG Carinae em sua nebulosa vermelha, AG Carinae em sua composição colorida e, no final, os Pilares da Criação. '+focusHint+' Mantenha a estrela dentro da faixa.';
+  T('OBJETIVO E CAPTURA',textX,storyY,11,'#ff9ad9','left','700 11px system-ui,sans-serif');
+  let controlsY=WR(supplementary,textX,storyY+H*.026,textW,H*.038,13,'#ff9ad9')+6;
+
+  const playerOne=nP===1&&!getController(0)?.connected&&getController(1)?.connected?1:0;
+  const guidePlayer=nP>1&&!getController(0)?.connected&&getController(1)?.connected?1:playerOne;
+  const pad=getController(guidePlayer);
+  const cardX=W*.73,cardY=H*.69,cardW=W*.18,cardH=H*.17;
+  drawControllerIllustration(cardX,cardY,cardW,cardH,useGamepadHints()?pad:null,false);
+
+  const guideX=W*.09,guideW=W*.60;
+  if(nP===1){
+    const g=playerControlGuide(0),step=H*.034;
+    T('Mover: '+g.move,guideX,controlsY+12,13,'#8be8ff','left','600 13px system-ui,sans-serif');
+    T('Atirar: '+g.fire,guideX,controlsY+12+step,13,'#8be8ff','left','600 13px system-ui,sans-serif');
+    T('Trocar Hubble/Roman: '+g.mode,guideX,controlsY+12+step*2,13,'#8be8ff','left','600 13px system-ui,sans-serif');
+    T('Super: '+g.super,guideX,controlsY+12+step*3,13,'#8be8ff','left','600 13px system-ui,sans-serif');
+  }else{
+    const g1=playerControlGuide(0),g2=playerControlGuide(1);
+    let y=controlsY;
+    y=WR('P1 (Laranja): '+g1.move+' (Mover), '+g1.fire+' (Atirar), '+g1.mode+' (Trocar), '+g1.super+' (Super)',guideX,y,guideW,H*.032,11,'#ff9a47')+2;
+    y=WR('P2 (Verde): '+g2.move+' (Mover), '+g2.fire+' (Atirar), '+g2.mode+' (Trocar), '+g2.super+' (Super)',guideX,y,guideW,H*.032,11,'#4fd8c4')+1;
+    WR('Pontos: Dano +100 | Asteroide +200 | K.O. Bonus +2000 | Combo (1.5x, 2x, 3x)',guideX,y,guideW,H*.03,11,'#ffd34d');
+  }
+  T(useGamepadHints()?controllerActionName('confirm')+' / '+controllerActionName('pause')+' PARA COMEÇAR':lastInputDevice==='touch'?'TOQUE PARA COMEÇAR':'ENTER PARA COMEÇAR',W/2,H-72,20,'#ffe08a','center','700 20px system-ui,sans-serif');
+}
+
 function drawCodex(){
   const entry=CODEX_ENTRIES[codexPage]||CODEX_ENTRIES[0];
   panel();
@@ -1094,17 +1219,28 @@ function drawSettings(){
     const pad=getController(controlPlayer),bindings=gamepadBindings[controlPlayer];
     drawMenuButton('settings:player:0','PLAYER 1',W*.27,H*.285,W*.22,34,controlPlayer===0||menuCursor===2,true);
     drawMenuButton('settings:player:1','PLAYER 2',W*.51,H*.285,W*.22,34,controlPlayer===1||menuCursor===3,true);
-    const actions=[['up','MOVER ↑'],['down','MOVER ↓'],['left','MOVER ←'],['right','MOVER →'],['fire','DISPARO'],['super','SUPER'],['mode','TROCAR TELESCÓPIO'],['confirm','CONFIRMAR'],['pause','PAUSAR'],['back','VOLTAR']];
-    actions.forEach(([action,label],i)=>{
-      const col=i%2,row=Math.floor(i/2),x=W*.14+col*W*.37,y=H*.35+row*H*.067;
-      const waiting=remapPending?.player===controlPlayer&&remapPending.action===action;
-      drawMenuButton(`settings:bind:${controlPlayer}:${action}`,label+' · '+(waiting?'...':gamepadButtonName(bindings[action],pad)),x,y,W*.34,32,menuCursor===4+i,true);
-    });
+
+    T('VISUALIZAÇÃO DO CONTROLE',W*.17,H*.345,10,'#8be8ff','center','700 10px system-ui,sans-serif');
+    drawControllerIllustration(W*.075,H*.365,W*.19,H*.235,pad,true);
+    if(SPRITES.controlDpad.complete&&SPRITES.controlDpad.naturalWidth)drawImageContained(SPRITES.controlDpad,W*.095,H*.608,29,28);
+    T('DIRECIONAL',W*.14,H*.644,9,'#cbd7ed','left','700 9px system-ui,sans-serif');
+    const statusX=W*.075,statusY=H*.68,statusW=W*.19,statusH=H*.095;
+    drawControlFrame(statusX,statusY,statusW,statusH,!!remapPending&&remapPending.player===controlPlayer);
     const waitingForInput=remapPending?.player===controlPlayer;
     const connected=!!pad;
-    X.fillStyle=connected?'#8be8ff':'#a9b6d2';X.beginPath();X.arc(W*.18,H*.72,4,0,Math.PI*2);X.fill();
-    T(connected?`CONTROLE ${controlPlayer+1} CONECTADO · ${controllerFamily(pad).toUpperCase()}`:`CONECTE O CONTROLE ${controlPlayer+1}`,W*.20,H*.725,12,connected?'#8be8ff':'#a9b6d2','left','600 12px system-ui,sans-serif');
-    T(waitingForInput?'PRESSIONE O BOTÃO DESEJADO · ESC CANCELA':'SELECIONE UMA AÇÃO PARA REMAPEAR · ANALÓGICO ESQUERDO MANTIDO',W/2,H*.765,11,waitingForInput?'#ffe08a':'#cbd7ed','center','600 11px system-ui,sans-serif');
+    T(connected?'CONTROLE '+(controlPlayer+1)+' CONECTADO · '+controllerFamily(pad).toUpperCase():'CONECTE O CONTROLE '+(controlPlayer+1),statusX+statusW/2,statusY+statusH*.48,9,connected?'#8be8ff':'#a9b6d2','center','700 9px system-ui,sans-serif');
+
+    const actions=[['up','MOVER ↑'],['down','MOVER ↓'],['left','MOVER ←'],['right','MOVER →'],['fire','DISPARO'],['super','SUPER'],['mode','TROCAR TELESCÓPIO'],['confirm','CONFIRMAR'],['pause','PAUSAR'],['back','VOLTAR']];
+    const layout={up:[0,0],down:[1,0],left:[0,1],right:[1,1],fire:[0,2],super:[1,2],mode:[0,3],confirm:[1,3],pause:[0,4],back:[1,4]};
+    const colX=[W*.285,W*.615],actionY=H*.355,rowStep=H*.065,buttonW=W*.30,buttonH=30;
+    T('MOVIMENTO',W*.60,H*.335,10,'#8be8ff','center','700 10px system-ui,sans-serif');
+    T('AÇÕES DA MISSÃO',W*.60,H*.49,10,'#ffcf8a','center','700 10px system-ui,sans-serif');
+    actions.forEach(([action,label],i)=>{
+      const pos=layout[action],col=pos[0],row=pos[1],x=colX[col],y=row<2?actionY+row*rowStep:H*.515+(row-2)*rowStep;
+      const waiting=remapPending?.player===controlPlayer&&remapPending.action===action;
+      drawControlRemapButton('settings:bind:'+controlPlayer+':'+action,label,bindings[action],pad,x,y,buttonW,buttonH,menuCursor===4+i,waiting);
+    });
+    T(waitingForInput?'PRESSIONE O BOTÃO DESEJADO · ESC CANCELA':'SELECIONE UMA AÇÃO PARA REMAPEAR · ANALÓGICO ESQUERDO MANTIDO',W*.60,H*.765,10,waitingForInput?'#ffe08a':'#cbd7ed','center','600 10px system-ui,sans-serif');
     drawMenuButton('settings:controls:reset','PADRÕES',W*.20,H*.83,W*.25,36,menuCursor===14,true);
     drawMenuButton('settings:back','VOLTAR',W*.55,H*.83,W*.25,36,menuCursor===15,true);
     return;
@@ -1118,24 +1254,33 @@ function drawSettings(){
   drawMenuButton('settings:quality','GRÁFICOS: '+(settings.quality==='high'?'ALTO':'ECONÔMICO'),W*.29,H*.73,W*.42,42,menuCursor===9,true);
   drawMenuButton('settings:back','VOLTAR',W*.39,H*.83,W*.22,38,menuCursor===10,true);
 }
-
 function drawPause(){
-  X.fillStyle='rgba(8,6,22,.40)';X.fillRect(0,0,W,H);
-  T('ROMAN: GUARDIÃ DAS ESTRELAS',W/2,H*.072,25,'#ffb15c','center');
-  panel(W*.055,H*.145,W*.89,H*.79,'rgba(7,12,31,.42)');
-  T('PAUSADO',W/2,H*.215,20,'#cbd7ed','center','600 20px system-ui,sans-serif');
-  const buttons=[['pause:resume','RETOMAR'],['pause:restart','REINICIAR FASE'],['pause:settings','CONFIGURAÇÕES'],['pause:main','MENU PRINCIPAL']];
-  const bw=W*.34,bh=46,bx=[W*.13,W*.53],by=[H*.29,H*.405];
-  buttons.forEach((b,i)=>drawMenuButton(b[0],b[1],bx[i%2],by[Math.floor(i/2)],bw,bh,i===menuCursor,true));
-  X.strokeStyle='rgba(139,232,255,.20)';X.lineWidth=1;X.beginPath();X.moveTo(W*.12,H*.51);X.lineTo(W*.88,H*.51);X.stroke();
-  T('VIDAS',W*.14,H*.565,17,'#ffd34d','left');
-  P.forEach((p,i)=>T('P'+(i+1)+': '+(cheatSettings.god||cheatSettings.infiniteHealth?'∞':'♥'.repeat(Math.max(0,p.hp))),W*(.27+i*.23),H*.565,17,p.col,'left'));
-  T('CARTAS ESTELARES · '+pauseCards.length,W*.14,H*.655,16,'#ffd34d','left');
-  const visible=pauseCards.slice(-3);
-  visible.forEach((card,i)=>WR(card,W*.14,H*.70+i*23,W*.72,17,12,'#efe2c2'));
-  T(useGamepadHints()?`DIRECIONAL / ANALÓGICO: NAVEGAR · ${controllerActionName('confirm')}: SELECIONAR · ${controllerActionName('pause')}: RETOMAR`:lastInputDevice==='touch'?'TOQUE NAS OPÇÕES PARA SELECIONAR':'WASD / SETAS NAVEGAR · ENTER SELECIONAR · ESC RETOMAR',W/2,H*.91,10,'#a9b6d2','center','600 10px system-ui,sans-serif');
-}
+  X.fillStyle='rgba(8,6,22,.46)';X.fillRect(0,0,W,H);
+  panel(W*.055,H*.13,W*.89,H*.80,'rgba(7,12,31,.54)');
+  T('ROMAN: GUARDIÃ DAS ESTRELAS',W/2,H*.18,25,'#ffb15c','center','700 25px system-ui,sans-serif');
+  T('PAUSADO',W/2,H*.235,18,'#cbd7ed','center','600 18px system-ui,sans-serif');
+  X.strokeStyle='rgba(139,232,255,.22)';X.lineWidth=1;X.beginPath();X.moveTo(W*.12,H*.265);X.lineTo(W*.88,H*.265);X.stroke();
 
+  const buttons=[['pause:resume','RETOMAR'],['pause:restart','REINICIAR FASE'],['pause:settings','CONFIGURAÇÕES'],['pause:main','MENU PRINCIPAL']];
+  const bw=W*.34,bh=44,bx=[W*.13,W*.53],by=[H*.29,H*.395];
+  buttons.forEach((b,i)=>drawMenuButton(b[0],b[1],bx[i%2],by[Math.floor(i/2)],bw,bh,i===menuCursor,true));
+
+  X.strokeStyle='rgba(139,232,255,.24)';X.lineWidth=1;X.beginPath();X.moveTo(W*.12,H*.50);X.lineTo(W*.88,H*.50);X.stroke();
+  X.strokeStyle='rgba(139,232,255,.15)';X.beginPath();X.moveTo(W*.64,H*.545);X.lineTo(W*.64,H*.84);X.stroke();
+
+  T('VIDAS',W*.14,H*.565,16,'#ffd34d','left','700 16px system-ui,sans-serif');
+  P.forEach((p,i)=>T('P'+(i+1)+': '+(cheatSettings.god||cheatSettings.infiniteHealth?'∞':'♥'.repeat(Math.max(0,p.hp))),W*(.27+i*.23),H*.565,16,p.col,'left','700 16px system-ui,sans-serif'));
+  T('CARTAS ESTELARES · '+pauseCards.length,W*.14,H*.655,15,'#ffd34d','left','700 15px system-ui,sans-serif');
+  pauseCards.slice(-3).forEach((card,i)=>WR(card,W*.14,H*.70+i*21,W*.47,16,11,'#efe2c2'));
+
+  const activePad=getController(activeControllerPlayer());
+  drawControllerIllustration(W*.69,H*.535,W*.20,H*.225,activePad,!!activePad?.connected);
+  const deviceLabel=activePad?.connected?'CONTROLES ATIVOS · '+controllerFamily(activePad).toUpperCase():lastInputDevice==='touch'?'CONTROLES POR TOQUE':'CONTROLES DE TECLADO';
+  drawControlFrame(W*.685,H*.765,W*.21,H*.12,false);
+  T(deviceLabel,W*.79,H*.825,9,'#cfeeff','center','700 9px system-ui,sans-serif');
+
+  T(useGamepadHints()?('DIRECIONAL / ANALÓGICO: NAVEGAR · '+controllerActionName('confirm')+': SELECIONAR · '+controllerActionName('pause')+': RETOMAR'):lastInputDevice==='touch'?'TOQUE NAS OPÇÕES PARA SELECIONAR':'WASD / SETAS NAVEGAR · ENTER SELECIONAR · ESC RETOMAR',W/2,H*.91,10,'#a9b6d2','center','600 10px system-ui,sans-serif');
+}
 function drawCheats(){
   X.fillStyle='rgba(8,6,22,.84)';X.fillRect(0,0,W,H);panel();
   T('AJUSTES DE FASE',W/2,H*.20,27,'#ffb15c','center');
@@ -1209,24 +1354,7 @@ function hud(){
   if(scene==='pause'){drawPause();return}
   if(scene==='cheats'){drawCheats();return}
   if(scene==='quit'){drawQuit();return}
-  if(scene=='intro'){
-    panel();T('BOSS '+(currentBossIndex+1)+' / '+BOSSES.length+' · '+BOSSES[currentBossIndex].name,100,105,25,'#ffb15c');
-    let y=WR(nP===3?
-      '“Bem-vindos ao Modo Versus na mesma tela! Vocês jogam juntos na mesma arena como no Co-op, mas a pontuação é individual. Quem somar mais pontos destruindo asteroides, acertando o chefe e conseguindo o K.O. Bonus de 2.000 pontos será o vencedor!”':
-      (currentBossIndex===0?'“Aqui é Nancy Grace Roman. Em 1960 virei a primeira astrônoma-chefe da NASA e lutei por telescópios no espaço. Agora o Hubble observa AG Carinae, uma estrela envolta por uma enorme casca de gás. Ajude o satélite a registrar essa imagem!”':'“Novo sinal detectado! Enfrente o alvo e prepare o satélite. Depois da batalha, o Foco Final acontece aqui mesmo na arena.”'),
-      100,145,W-200,26,18);
-    const focusHint=useGamepadHints()?`No Foco Final, segure ${controllerActionName('fire')} para subir a faixa; solte para descer.`:lastInputDevice==='touch'?'No Foco Final, toque e segure para subir a faixa; solte para descer.':'No Foco Final, segure Espaço para subir a faixa; solte para descer.';
-    y=WR('Campanha com três bosses: AG Carinae em sua nebulosa vermelha, AG Carinae em sua composição colorida e, no final, os Pilares da Criação. '+focusHint+' Mantenha a estrela dentro da faixa.',100,y+8,W-200,24,16,'#ff9ad9');
-    y+=4;
-    if(nP==1){const g=playerControlGuide(0);T('Mover: '+g.move,100,y+10,16,'#8be8ff');T('Atirar: '+g.fire,100,y+34,16,'#8be8ff');T('Trocar Hubble/Roman: '+g.mode,100,y+58,16,'#8be8ff');T('Super: '+g.super,100,y+82,16,'#8be8ff')}
-    else{
-      const g1=playerControlGuide(0),g2=playerControlGuide(1);
-      T(`P1 (Laranja): ${g1.move} (Mover), ${g1.fire} (Atirar), ${g1.mode} (Trocar), ${g1.super} (Super)`,100,y+10,13,'#ff9a47');
-      T(`P2 (Verde): ${g2.move} (Mover), ${g2.fire} (Atirar), ${g2.mode} (Trocar), ${g2.super} (Super)`,100,y+34,13,'#4fd8c4');
-      T('Pontos: Dano +100 | Asteroide +200 | K.O. Bonus +2000 | Combo (1.5x, 2x, 3x)',100,y+58,15,'#ffd34d');
-    }
-    T(useGamepadHints()?`${controllerActionName('confirm')} / ${controllerActionName('pause')} PARA COMEÇAR`:lastInputDevice==='touch'?'TOQUE PARA COMEÇAR':'ENTER PARA COMEÇAR',W/2,H-72,22,'#ffe08a','center');return;
-  }
+  if(scene=='intro'){drawPhaseIntro();return}
   if(scene=='ready'){T('ALVO '+(currentBossIndex+1)+' / '+BOSSES.length,W/2,H*.34,20,'#8be8ff','center','600 20px system-ui,sans-serif');T(BOSSES[currentBossIndex].name,W/2,H*.47,33,'#ffe08a','center');if(tm<.8)T('OBSERVAR!',W/2,H*.63,55,'#ff9a47','center');return}
   
   // HUD EM JOGO (SOLO, CO-OP E VERSUS)

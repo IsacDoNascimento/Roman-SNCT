@@ -208,3 +208,15 @@ O Codex foi dividido em 11 registros navegáveis: Nancy Grace Roman, Hubble, tel
 As imagens locais de Nancy, Hubble e telescópio Roman vieram de SpaceTheory/ProjetoSnct e foram copiadas para assets/codex/. Os registros de AG Carinae e dos Pilares reutilizam as imagens de recompensa já existentes em assets/rewards/. Os temas científicos sem imagem correspondente permanecem somente com texto; nenhuma imagem foi buscada na internet.
 
 Para conferir, abra html/index.html, inicie uma partida e conclua a captura de um boss. A recompensa deve permanecer aberta até uma confirmação manual. No menu principal, abra Codex e percorra as abas com as setas/controle, os pontos, clique ou toque.
+
+### 20. Elementos visuais de controle na introdução, configurações e pausa
+
+A introdução da missão foi reorganizada em um briefing com título do boss, retrato local de Nancy Grace Roman, descrição principal, objetivo complementar e comandos do dispositivo ativo. Quando um controle está em uso, a tela mostra a ilustração do controle e os nomes detectados para a família correspondente; teclado e toque recebem ilustrações próprias. Os comandos de P1, P2 e Versus continuam usando as mesmas funções e textos do jogo.
+
+A aba **Configurações → Controle** agora separa o desenho do controle dos grupos de remapeamento. Movimento e ações da missão têm áreas próprias; cada botão diferencia o estado normal, selecionado e aguardando entrada. A arte com letras A/B/X/Y e os ícones de face aparecem apenas quando a detecção é Xbox. PlayStation, Switch e controles genéricos usam uma ilustração neutra sem símbolos de marca e continuam exibindo os nomes fornecidos pela identificação atual do jogo. A ordem e os identificadores usados pelo remapeamento foram mantidos.
+
+A pausa conserva as quatro opções, as vidas e as cartas estelares. O título, as ações, as informações da partida e o guia do dispositivo agora têm áreas alinhadas, com uma ilustração que acompanha teclado, toque ou controle detectado. Os avisos de navegação continuam indicando apenas comandos já existentes. O acesso secreto aos cheats não foi divulgado na interface.
+
+A folha Gemini_Generated_Image_o01ym6o01ym6o01y.jpg foi recortada em PNGs com transparência, removendo o quadriculado do JPEG. Os arquivos criados em assets/sprites/ são control-pad.png, control-dpad.png, control-a.png, control-b.png, control-x.png, control-y.png, control-frame.png e control-frame-focus.png. A captura Downloads/layout foi usada apenas como guia de composição.
+
+Arquivos alterados: js/game.js, os oito recortes em assets/sprites/ e este README. Para conferir, abra html/index.html ou a configuração Open index.html do VS Code. Inicie uma campanha para ver o briefing; em Configurações → Controle, veja a ilustração e remapeie uma ação; durante uma fase, pressione Esc para conferir a pausa.
