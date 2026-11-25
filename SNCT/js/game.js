@@ -1232,15 +1232,15 @@ function drawSettings(){
 
     const actions=[['up','MOVER ↑'],['down','MOVER ↓'],['left','MOVER ←'],['right','MOVER →'],['fire','DISPARO'],['super','SUPER'],['mode','TROCAR TELESCÓPIO'],['confirm','CONFIRMAR'],['pause','PAUSAR'],['back','VOLTAR']];
     const layout={up:[0,0],down:[1,0],left:[0,1],right:[1,1],fire:[0,2],super:[1,2],mode:[0,3],confirm:[1,3],pause:[0,4],back:[1,4]};
-    const colX=[W*.285,W*.615],actionY=H*.355,rowStep=H*.065,buttonW=W*.30,buttonH=30;
-    T('MOVIMENTO',W*.60,H*.335,10,'#8be8ff','center','700 10px system-ui,sans-serif');
-    T('AÇÕES DA MISSÃO',W*.60,H*.49,10,'#ffcf8a','center','700 10px system-ui,sans-serif');
+    const colX=[W*.285,W*.615],actionY=H*.395,rowStep=H*.065,buttonW=W*.30,buttonH=30;
+    T('MOVIMENTO',W*.60,H*.37,10,'#8be8ff','center','700 10px system-ui,sans-serif');
+    T('AÇÕES DA MISSÃO',W*.60,H*.535,10,'#ffcf8a','center','700 10px system-ui,sans-serif');
     actions.forEach(([action,label],i)=>{
-      const pos=layout[action],col=pos[0],row=pos[1],x=colX[col],y=row<2?actionY+row*rowStep:H*.515+(row-2)*rowStep;
+      const pos=layout[action],col=pos[0],row=pos[1],x=colX[col],y=row<2?actionY+row*rowStep:H*.56+(row-2)*rowStep;
       const waiting=remapPending?.player===controlPlayer&&remapPending.action===action;
       drawControlRemapButton('settings:bind:'+controlPlayer+':'+action,label,bindings[action],pad,x,y,buttonW,buttonH,menuCursor===4+i,waiting);
     });
-    T(waitingForInput?'PRESSIONE O BOTÃO DESEJADO · ESC CANCELA':'SELECIONE UMA AÇÃO PARA REMAPEAR · ANALÓGICO ESQUERDO MANTIDO',W*.60,H*.765,10,waitingForInput?'#ffe08a':'#cbd7ed','center','600 10px system-ui,sans-serif');
+    T(waitingForInput?'PRESSIONE O BOTÃO DESEJADO · ESC CANCELA':'SELECIONE UMA AÇÃO PARA REMAPEAR · ANALÓGICO ESQUERDO MANTIDO',W*.60,H*.79,10,waitingForInput?'#ffe08a':'#cbd7ed','center','600 10px system-ui,sans-serif');
     drawMenuButton('settings:controls:reset','PADRÕES',W*.20,H*.83,W*.25,36,menuCursor===14,true);
     drawMenuButton('settings:back','VOLTAR',W*.55,H*.83,W*.25,36,menuCursor===15,true);
     return;

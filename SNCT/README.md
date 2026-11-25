@@ -220,3 +220,7 @@ A pausa conserva as quatro opções, as vidas e as cartas estelares. O título, 
 A folha Gemini_Generated_Image_o01ym6o01ym6o01y.jpg foi recortada em PNGs com transparência, removendo o quadriculado do JPEG. Os arquivos criados em assets/sprites/ são control-pad.png, control-dpad.png, control-a.png, control-b.png, control-x.png, control-y.png, control-frame.png e control-frame-focus.png. A captura Downloads/layout foi usada apenas como guia de composição.
 
 Arquivos alterados: js/game.js, os oito recortes em assets/sprites/ e este README. Para conferir, abra html/index.html ou a configuração Open index.html do VS Code. Inicie uma campanha para ver o briefing; em Configurações → Controle, veja a ilustração e remapeie uma ação; durante uma fase, pressione Esc para conferir a pausa.
+
+### 21. Espaçamento da aba de controle
+
+Após a captura do usuário, os títulos “MOVIMENTO” e “AÇÕES DA MISSÃO” foram reposicionados para não invadir as abas Player 1/Player 2 nem encostar nas linhas de remapeamento. A grade foi deslocada para baixo, preservando o espaçamento entre os botões, e a instrução de remapeamento foi reposicionada acima das ações Padrões e Voltar. Nenhum controle, ação ou regra de remapeamento foi alterado.
