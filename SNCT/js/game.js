@@ -122,6 +122,24 @@ const REWARD_IMAGES={agRed:new Image(),pillars:new Image(),agColor:new Image()};
 REWARD_IMAGES.agRed.src='../assets/rewards/ag-carinae-red.png';
 REWARD_IMAGES.pillars.src='../assets/rewards/pillars-of-creation.png';
 REWARD_IMAGES.agColor.src='../assets/rewards/ag-carinae-color.png';
+const CODEX_IMAGES={nancy:new Image(),hubble:new Image(),roman:new Image()};
+CODEX_IMAGES.nancy.src='../assets/codex/nancy-roman.jpg';
+CODEX_IMAGES.hubble.src='../assets/codex/hubble-telescope.jpeg';
+CODEX_IMAGES.roman.src='../assets/codex/roman-telescope.jpg';
+const CODEX_ENTRIES=[
+  {tab:'NANCY',title:'Nancy Grace Roman',subtitle:'PIONEIRA DA ASTRONOMIA ESPACIAL',paragraphs:['Nancy Grace Roman (1925–2018) foi uma astrônoma que defendeu a observação do universo acima da atmosfera.','Entrou na NASA em 1959 e, em 1960, tornou-se a primeira chefe de Astronomia da agência. Seu trabalho ajudou a viabilizar grandes observatórios espaciais como o Hubble.'],image:CODEX_IMAGES.nancy,credit:'Imagem local: ProjetoSnct/Nancy.jpg.'},
+  {tab:'HUBBLE',title:'Telescópio Espacial Hubble',subtitle:'UM OBSERVATÓRIO ACIMA DA ATMOSFERA',paragraphs:['Lançado em 1990, o Hubble observa o universo sem a distorção da atmosfera terrestre.','Uma falha no espelho primário foi corrigida em 1993 com instrumentos ópticos corretivos, permitindo imagens nítidas que transformaram a astronomia.'],image:CODEX_IMAGES.hubble,credit:'Imagem local: ProjetoSnct/telescopioHubble.jpeg.'},
+  {tab:'ROMAN',title:'Telescópio Espacial Nancy Grace Roman',subtitle:'UM CAMPO DE VISÃO AMPLO',paragraphs:['O observatório Roman leva o nome da cientista que ajudou a abrir caminho para a astronomia espacial.','Seu amplo campo de visão foi projetado para estudar energia escura, exoplanetas e a evolução do universo.'],image:CODEX_IMAGES.roman,credit:'Imagem local: ProjetoSnct/telescopio.jpg.'},
+  {tab:'AG VERMELHA',title:'AG Carinae · nebulosa avermelhada',subtitle:'UMA ESTRELA MASSIVA E SUA CASCA',paragraphs:[BOSSES[0].context],image:REWARD_IMAGES.agRed,credit:BOSSES[0].credit},
+  {tab:'AG COLORIDA',title:'AG Carinae · composição colorida',subtitle:'LUZ EM DIFERENTES FILTROS',paragraphs:[BOSSES[1].context],image:REWARD_IMAGES.agColor,credit:BOSSES[1].credit},
+  {tab:'PILARES',title:'Pilares da Criação · M16',subtitle:'ESTRELAS EM FORMAÇÃO',paragraphs:[BOSSES[2].context],image:REWARD_IMAGES.pillars,credit:BOSSES[2].credit},
+  {tab:'CORONÓGRAFO',title:'Coronógrafo',subtitle:'BLOQUEAR UMA ESTRELA PARA ENXERGAR AO REDOR',paragraphs:['Um coronógrafo usa máscaras e elementos ópticos para reduzir a luz intensa de uma estrela.','Com menos brilho direto, telescópios conseguem estudar objetos muito tênues próximos dela, como discos de poeira e alguns planetas.']},
+  {tab:'MICROLENTES',title:'Microlentes gravitacionais',subtitle:'A GRAVIDADE COMO LENTE',paragraphs:['A gravidade de uma estrela em primeiro plano pode curvar e ampliar por um breve período a luz de uma estrela distante.','Um planeta orbitando a estrela-lente pode produzir uma pequena variação adicional, revelando mundos que seriam difíceis de observar diretamente.']},
+  {tab:'ENERGIA',title:'Energia escura',subtitle:'A EXPANSÃO DO UNIVERSO',paragraphs:['Energia escura é o nome dado ao fenômeno ainda não explicado que está associado à expansão acelerada do universo.','Observatórios espaciais medem galáxias e supernovas ao longo do tempo para investigar como essa expansão mudou.']},
+  {tab:'EXOPLANETAS',title:'Exoplanetas',subtitle:'MUNDOS ALÉM DO SISTEMA SOLAR',paragraphs:['Exoplanetas são planetas que orbitam estrelas diferentes do Sol.','Levantamentos por microlentes e observações diretas ajudam a descobrir esses mundos e comparar seus sistemas com o nosso.']},
+  {tab:'LUZ ESTELAR',title:'A luz das estrelas',subtitle:'OBSERVAR É OLHAR PARA O PASSADO',paragraphs:['A luz leva tempo para atravessar o espaço. Por isso, a imagem de uma estrela distante mostra como ela era quando a luz iniciou a viagem.','Quanto mais distante o objeto, mais antiga é a luz que recebemos dele.']}
+];
+let codexPage=0;
 let currentBossIndex=0,focusMinigame=null,captureAssisted=false,rewardNotice=null;
 
 const stars=[];for(let i=0;i<110;i++)stars.push({x:Math.random()*W,y:Math.random()*H,z:Math.random()*2.5+.5});
@@ -180,6 +198,7 @@ function updateTouches(e){
   addEventListener(evt, e => {
     e.preventDefault();
     if(evt==='touchstart'||evt==='touchmove')lastInputDevice='touch';
+    if(scene==='play'&&rewardNotice){if(evt==='touchstart'&&e.touches.length)continueAfterReward();return}
     if(scene==='play'&&focusMinigame?.active){if(evt==='touchstart')K.Space=2;if(e.touches.length===0)K.Space=0;return}
     if(evt==='touchstart'&&e.touches.length&&scene!=='play'&&scene!=='intro'&&scene!=='ready'){
       const touch=e.touches[0];handlePointer(touch.clientX,touch.clientY);return;
@@ -265,7 +284,7 @@ function finishFocus(assisted=false){
   finalBossTimeStr=fmtTime(clock);flashW=.18;
   // Dois cliques curtos dão a sensação de disparo de uma câmera.
   snd(1450,.035,'square',.075,-950);setTimeout(()=>snd(780,.075,'triangle',.055,-470),55);
-  rewardNotice={time:0,limit:7};
+  rewardNotice={};
 }
 
 function stepFocus(dt){
@@ -289,7 +308,8 @@ function stepFocus(dt){
 }
 
 function continueAfterReward(){
-  focusMinigame=null;rewardNotice=null;
+  if(!rewardNotice)return;
+  focusMinigame=null;rewardNotice=null;uiButtons=[];
   if(currentBossIndex<BOSSES.length-1){
     currentBossIndex++;createBoss(currentBossIndex);
     bul=[];sh=[];pk=[];asteroids=[];pwItems=[];pt=[];combo=false;hs=0;
@@ -337,6 +357,7 @@ function drawSlider(id,label,value,x,y,w){
 
 function activateButton(id){
   if(!id)return;
+  if(id==='reward:continue'){continueAfterReward();return}
   if(id==='main:play'){scene='modes';menuCursor=0;return}
   if(id==='main:codex'){scene='codex';menuCursor=0;return}
   if(id==='main:settings'){previousScene='mainmenu';scene='settings';menuCursor=0;return}
@@ -367,6 +388,8 @@ function activateButton(id){
   if(id.startsWith('cheat:damage:')){cheatSettings.damageMultiplier=Number(id.split(':')[2]);return}
   if(id==='cheat:close'){scene='pause';menuCursor=0;return}
   if(id==='quit:return'){scene='splash';menuCursor=0;return}
+  if(id.startsWith('codex:tab:')){codexPage=cl(Number(id.split(':')[2]),0,CODEX_ENTRIES.length-1);return}
+  if(id.startsWith('codex:page:')){codexPage=cl(Number(id.split(':')[2]),0,CODEX_ENTRIES.length-1);return}
   if(id==='codex:back'){scene='mainmenu';menuCursor=0;return}
 }
 
@@ -546,8 +569,7 @@ function step(dt){
   if(scene==='play'&&K.Escape===2){pauseGame();return}
   if(scene==='play'&&focusMinigame?.active){stepFocus(dt);return}
   if(scene==='play'&&rewardNotice){
-    rewardNotice.time+=dt;
-    if(K.Enter===2||rewardNotice.time>=rewardNotice.limit)continueAfterReward();
+    if(K.Enter===2)continueAfterReward();
     return;
   }
 
@@ -1022,18 +1044,47 @@ function drawDiff(){
   drawMenuButton('back:modes','VOLTAR',W*.39,H*.78,W*.22,42,menuCursor===2,true);
 }
 
-function drawCodex(){
-  panel();T('ARQUIVOS DA NASA · CODEX',W/2,95,32,'#ffb15c','center');
-  let y=WR('1. Nancy Grace Roman (1925-2018): Conhecida como "Mãe do Hubble", foi a primeira astrônoma-chefe da NASA e líder do planejamento de observatórios no espaço.',100,135,W-200,22,16,'#efe2c2');
-  X.strokeStyle='rgba(139,232,255,.16)';X.lineWidth=1;X.beginPath();X.moveTo(100,y-2);X.lineTo(W-100,y-2);X.stroke();
-  y=WR('2. Telescópio Hubble (1990): Lançado com uma falha óptica no espelho primário. Em 1993, astronautas instalaram lentes corretivas para revelar imagens nítidas do cosmo.',100,y+6,W-200,22,16,'#8be8ff');
-  X.strokeStyle='rgba(139,232,255,.16)';X.beginPath();X.moveTo(100,y-2);X.lineTo(W-100,y-2);X.stroke();
-  y=WR('3. Telescópio Roman: Oferece um campo de visão muito maior que o Hubble, projetado para investigar energia escura e exoplanetas.',100,y+6,W-200,22,16,'#ff9ad9');
-  X.strokeStyle='rgba(139,232,255,.16)';X.beginPath();X.moveTo(100,y-2);X.lineTo(W-100,y-2);X.stroke();
-  WR('4. Coronógrafo e microlentes: O coronógrafo bloqueia a luz de uma estrela para observar objetos fracos ao redor; microlentes atuam como lupa gravitacional.',100,y+6,W-200,22,16,'#ffd34d');
-  drawMenuButton('codex:back','VOLTAR',W*.39,H*.82,W*.22,42,menuCursor===0,true);
+function drawImageContained(img,x,y,w,h){
+  if(!img||!img.complete||!img.naturalWidth)return false;
+  const scale=Math.min(w/img.naturalWidth,h/img.naturalHeight),dw=img.naturalWidth*scale,dh=img.naturalHeight*scale;
+  X.drawImage(img,x+(w-dw)/2,y+(h-dh)/2,dw,dh);return true;
 }
 
+function drawCodex(){
+  const entry=CODEX_ENTRIES[codexPage]||CODEX_ENTRIES[0];
+  panel();
+  T('ARQUIVOS DA NASA · CODEX',W*.09,H*.16,25,'#ffb15c','left','700 25px system-ui,sans-serif');
+  T((codexPage+1)+' / '+CODEX_ENTRIES.length,W*.89,H*.16,12,'#a9b6d2','right','600 12px system-ui,sans-serif');
+  const columns=6,tabW=W*.126,tabGap=W*.012,tabH=32,tabTop=H*.205;
+  CODEX_ENTRIES.forEach((item,i)=>{
+    const row=Math.floor(i/columns),first=row*columns,count=Math.min(columns,CODEX_ENTRIES.length-first),col=i%columns;
+    const rowW=count*tabW+(count-1)*tabGap,x=(W-rowW)/2+col*(tabW+tabGap),y=tabTop+row*H*.066,index=uiButtons.length;
+    drawMenuButton('codex:tab:'+i,item.tab,x,y,tabW,tabH,menuCursor===index,true);
+    if(i===codexPage){X.fillStyle='#ffb15c';X.fillRect(x+tabW*.12,y+tabH-3,tabW*.76,2)}
+  });
+  const hasImage=!!entry.image,imageX=W*.095,imageY=H*.37,imageW=W*.30,imageH=H*.42;
+  const textX=hasImage?W*.43:W*.12,textW=hasImage?W*.45:W*.76;
+  if(hasImage){
+    X.save();roundedPanelPath(imageX,imageY,imageW,imageH,12);X.fillStyle='rgba(4,8,22,.82)';X.fill();X.strokeStyle='rgba(139,232,255,.48)';X.lineWidth=1.5;X.stroke();
+    if(!drawImageContained(entry.image,imageX+8,imageY+8,imageW-16,imageH-16)){T('CARREGANDO IMAGEM',imageX+imageW/2,imageY+imageH/2,12,'#a9b6d2','center','600 12px system-ui,sans-serif')}
+    X.restore();
+  }
+  T(entry.title,textX,H*.405,22,'#ffe08a','left','700 22px system-ui,sans-serif');
+  T(entry.subtitle,textX,H*.45,11,'#8be8ff','left','600 11px system-ui,sans-serif');
+  let textY=H*.49;const bodySize=cl(W*.017,14,16),lineHeight=bodySize*1.42;
+  entry.paragraphs.forEach(paragraph=>{textY=WR(paragraph,textX,textY,textW,lineHeight,bodySize,'#d5e2f7')+7});
+  if(entry.credit)T(entry.credit,textX,H*.79,10,'#a9b6d2','left','600 10px system-ui,sans-serif');
+  const dotY=H*.855,spacing=23,dotStart=W/2-(CODEX_ENTRIES.length-1)*spacing/2;
+  CODEX_ENTRIES.forEach((item,i)=>{
+    const x=dotStart+i*spacing,index=uiButtons.length,active=i===codexPage,focused=menuCursor===index;
+    X.save();if(active){X.shadowColor='#ffb15c';X.shadowBlur=9}
+    X.fillStyle=active?'#ffb15c':'rgba(213,226,247,.48)';X.beginPath();X.arc(x,dotY,active?4.8:3.1,0,Math.PI*2);X.fill();X.shadowBlur=0;
+    if(focused){X.strokeStyle=menuFocus==='keyboard'?'#fff2c7':'#8be8ff';X.lineWidth=1.4;if(menuFocus==='keyboard')X.setLineDash([2,2]);X.strokeRect(x-9,dotY-9,18,18);X.setLineDash([])}
+    X.restore();uiButtons.push({id:'codex:page:'+i,x:x-11,y:dotY-11,w:22,h:22});
+  });
+  const backIndex=uiButtons.length;
+  drawMenuButton('codex:back','VOLTAR',W*.77,H*.83,W*.14,34,menuCursor===backIndex,true);
+}
 function drawSettings(){
   if(previousScene==='pause')X.fillStyle='rgba(10,8,25,.72)',X.fillRect(0,0,W,H);
   panel();T('CONFIGURAÇÕES',W/2,H*.17,34,'#ffb15c','center');
@@ -1129,19 +1180,24 @@ function drawFocusMinigame(){
 
 function drawRewardNotice(){
   const data=BOSSES[currentBossIndex],img=REWARD_IMAGES[data.image];
-  const x=460,y=72,w=480,h=226,ix=x+12,iy=y+39,iw=170,ih=150,tx=x+195,tw=270;
-  X.save();roundedPanelPath(x,y,w,h,15);X.fillStyle='rgba(5,10,28,.92)';X.fill();X.strokeStyle='rgba(139,232,255,.72)';X.lineWidth=1.5;X.stroke();
-  T('CAPTURA REGISTRADA · '+(currentBossIndex+1)+' / '+BOSSES.length,x+16,y+25,13,'#8be8ff','left','600 13px system-ui,sans-serif');
-  X.fillStyle='#070a18';X.fillRect(ix,iy,iw,ih);X.strokeStyle='rgba(139,232,255,.7)';X.lineWidth=1.5;X.strokeRect(ix,iy,iw,ih);
-  if(img&&img.complete&&img.naturalWidth){const scale=Math.min((iw-6)/img.naturalWidth,(ih-6)/img.naturalHeight),dw=img.naturalWidth*scale,dh=img.naturalHeight*scale;X.drawImage(img,ix+(iw-dw)/2,iy+(ih-dh)/2,dw,dh)}
-  T(data.rewardName,tx,y+58,17,'#ffe08a','left','700 17px system-ui,sans-serif');
-  WR(data.context,tx,y+82,tw,17,12,'#d5e2f7');
-  T(captureAssisted?'Foco estabilizado automaticamente.':'Imagem registrada com foco estável.',tx,y+166,11,'#8be8ff','left','11px system-ui,sans-serif');
-  T('Crédito: '+data.credit,tx,y+188,10,'#a9b6d2','left','10px system-ui,sans-serif');
-  T(continueControlText()+' · avanço automático em '+Math.max(0,Math.ceil(rewardNotice.limit-rewardNotice.time))+'s',x+16,y+216,10,'#ffe08a','left','10px system-ui,sans-serif');
+  const boxW=Math.min(W*.90,864),boxH=Math.min(H*.90,486),x=(W-boxW)/2,y=(H-boxH)/2,pad=boxW*.04;
+  X.fillStyle='rgba(4,5,18,.76)';X.fillRect(0,0,W,H);
+  X.save();roundedPanelPath(x,y,boxW,boxH,20);X.fillStyle='rgba(5,10,28,.97)';X.fill();X.strokeStyle='rgba(139,232,255,.78)';X.lineWidth=2;X.stroke();
+  X.strokeStyle='rgba(255,177,92,.72)';X.lineWidth=3;X.beginPath();X.moveTo(x+pad,y+2);X.lineTo(x+pad+92,y+2);X.stroke();
+  T('CAPTURA REGISTRADA · FASE '+(currentBossIndex+1)+' / '+BOSSES.length,x+pad,y+38,13,'#8be8ff','left','600 13px system-ui,sans-serif');
+  const imageX=x+pad,imageY=y+76,imageW=boxW*.39,imageH=boxH*.60;
+  X.fillStyle='#070a18';X.fillRect(imageX,imageY,imageW,imageH);X.strokeStyle='rgba(139,232,255,.68)';X.lineWidth=1.5;X.strokeRect(imageX,imageY,imageW,imageH);
+  if(!drawImageContained(img,imageX+7,imageY+7,imageW-14,imageH-14)){T('IMAGEM INDISPONÍVEL',imageX+imageW/2,imageY+imageH/2,12,'#a9b6d2','center','600 12px system-ui,sans-serif')}
+  const textX=imageX+imageW+pad*.72,textW=x+boxW-pad-textX;
+  T(data.rewardName,textX,y+108,cl(boxW*.027,18,24),'#ffe08a','left','700 '+cl(boxW*.027,18,24)+'px system-ui,sans-serif');
+  const bodySize=cl(boxW*.018,13,17),bodyBottom=WR(data.context,textX,y+141,textW,bodySize*1.45,bodySize,'#d5e2f7');
+  const detailY=Math.max(y+boxH*.68,Math.min(bodyBottom+18,y+boxH-112));
+  T(captureAssisted?'FOCO ESTABILIZADO AUTOMATICAMENTE':'IMAGEM REGISTRADA COM FOCO ESTÁVEL',textX,detailY,11,'#8be8ff','left','600 11px system-ui,sans-serif');
+  T('Crédito: '+data.credit,textX,detailY+23,10,'#a9b6d2','left','600 10px system-ui,sans-serif');
   X.restore();
+  const buttonW=Math.min(boxW*.52,420),buttonH=42;
+  drawMenuButton('reward:continue',continueControlText(),W/2-buttonW/2,y+boxH-buttonH-14,buttonW,buttonH,true,true);
 }
-
 function hud(){
   if(['splash','mainmenu','modes','diff','codex','quit'].includes(scene)||(scene==='settings'&&previousScene==='mainmenu'))drawMenuBackdrop();
   if(scene==='splash'){drawSplash();return}

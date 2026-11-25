@@ -198,3 +198,13 @@ Coloque os arquivos em assets/audio/ com estes nomes:
 A trilha de menu acompanha abertura, navegação dos menus e telas de resultado. Ao iniciar uma partida, a dificuldade selecionada escolhe a faixa correspondente. Essa música continua durante as fases, a pausa, as configurações abertas durante a pausa e o painel secreto de cheats. A passagem entre bosses não reinicia a faixa. Reiniciar fase volta ao início da missão e reinicia a faixa atual desde o começo. Ao voltar aos menus, a faixa de menu retoma sua reprodução.
 
 Para respeitar a política de reprodução automática do navegador, a música começa após a primeira interação do jogador com teclado, controle, mouse ou toque.
+
+### 19. Recompensas manuais e Codex em abas
+
+Ao concluir o Foco Final, a recompensa agora aparece em uma janela grande e centralizada com a fotografia, o nome, a descrição e os créditos do boss daquela fase. A tela fica parada e não avança por temporizador: Enter, o botão de confirmação do controle ou um toque do jogador escolhem quando continuar. O botão visível também aceita clique/toque. O tamanho da janela e a área da imagem usam proporções do canvas; imagens são ajustadas sem distorção e os textos são quebrados em linhas para evitar cortes.
+
+O Codex foi dividido em 11 registros navegáveis: Nancy Grace Roman, Hubble, telescópio Roman, duas composições de AG Carinae, Pilares da Criação, coronógrafo, microlentes gravitacionais, energia escura, exoplanetas e luz estelar. Abas, pontos de página e o botão Voltar aceitam clique/toque e a navegação direcional já usada pelo jogo. Escape continua voltando ao menu.
+
+As imagens locais de Nancy, Hubble e telescópio Roman vieram de SpaceTheory/ProjetoSnct e foram copiadas para assets/codex/. Os registros de AG Carinae e dos Pilares reutilizam as imagens de recompensa já existentes em assets/rewards/. Os temas científicos sem imagem correspondente permanecem somente com texto; nenhuma imagem foi buscada na internet.
+
+Para conferir, abra html/index.html, inicie uma partida e conclua a captura de um boss. A recompensa deve permanecer aberta até uma confirmação manual. No menu principal, abra Codex e percorra as abas com as setas/controle, os pontos, clique ou toque.
