@@ -1125,12 +1125,19 @@ function drawControlRemapButton(id,label,binding,pad,x,y,w,h,selected,waiting){
   }
   X.restore();uiButtons.push({id,x,y,w,h});
 }
+function introMovementText(player){
+  const assigned=nP===1&&player===0&&!getController(0)?.connected&&getController(1)?.connected?1:player;
+  const pad=getController(assigned);
+  if(pad?.connected&&useGamepadHints())return '↑ ↓ ← → / ANALÓGICO';
+  if(lastInputDevice==='touch')return player===0?'↑ ↓ ← → / WASD / TOQUE':'↑ ↓ ← → / TOQUE';
+  return player===0?'↑ ↓ ← → / WASD':'↑ ↓ ← →';
+}
 function drawPhaseIntro(){
   panel();
   T('BRIEFING DE MISSÃO',W*.09,H*.135,13,'#8be8ff','left','700 13px system-ui,sans-serif');
   T('BOSS '+(currentBossIndex+1)+' / '+BOSSES.length+' · '+BOSSES[currentBossIndex].name,W*.09,H*.195,23,'#ffb15c','left','700 23px system-ui,sans-serif');
 
-  const portraitX=W*.09,portraitY=H*.255,portraitW=W*.215,portraitH=H*.405;
+  const portraitX=W*.09,portraitY=H*.255,portraitW=W*.215,portraitH=H*.31;
   X.save();roundedPanelPath(portraitX,portraitY,portraitW,portraitH,12);X.fillStyle='rgba(5,10,27,.82)';X.fill();X.strokeStyle='rgba(139,232,255,.56)';X.lineWidth=1.5;X.stroke();
   if(!drawImageContained(CODEX_IMAGES.nancy,portraitX+6,portraitY+6,portraitW-12,portraitH-12))T('NANCY GRACE ROMAN',portraitX+portraitW/2,portraitY+portraitH/2,11,'#cbd7ed','center','700 11px system-ui,sans-serif');
   X.restore();
@@ -1150,7 +1157,7 @@ function drawPhaseIntro(){
       :'No Foco Final, segure Espaço para subir a faixa; solte para descer.';
   const supplementary='Campanha com três bosses: AG Carinae em sua nebulosa vermelha, AG Carinae em sua composição colorida e, no final, os Pilares da Criação. '+focusHint+' Mantenha a estrela dentro da faixa.';
   T('OBJETIVO E CAPTURA',textX,storyY,11,'#ff9ad9','left','700 11px system-ui,sans-serif');
-  let controlsY=WR(supplementary,textX,storyY+H*.026,textW,H*.038,13,'#ff9ad9')+6;
+  WR(supplementary,textX,storyY+H*.026,textW,H*.038,13,'#ff9ad9');
 
   const playerOne=nP===1&&!getController(0)?.connected&&getController(1)?.connected?1:0;
   const guidePlayer=nP>1&&!getController(0)?.connected&&getController(1)?.connected?1:playerOne;
@@ -1158,19 +1165,20 @@ function drawPhaseIntro(){
   const cardX=W*.73,cardY=H*.69,cardW=W*.18,cardH=H*.17;
   drawControllerIllustration(cardX,cardY,cardW,cardH,useGamepadHints()?pad:null,false);
 
-  const guideX=W*.09,guideW=W*.60;
+  const guideX=W*.09,guideW=W*.24,guideY=H*.59;
+  T(nP===1?'COMANDOS DO PILOTO':'COMANDOS DOS JOGADORES',guideX,guideY,10,'#8be8ff','left','700 10px system-ui,sans-serif');
   if(nP===1){
-    const g=playerControlGuide(0),step=H*.034;
-    T('Mover: '+g.move,guideX,controlsY+12,13,'#8be8ff','left','600 13px system-ui,sans-serif');
-    T('Atirar: '+g.fire,guideX,controlsY+12+step,13,'#8be8ff','left','600 13px system-ui,sans-serif');
-    T('Trocar Hubble/Roman: '+g.mode,guideX,controlsY+12+step*2,13,'#8be8ff','left','600 13px system-ui,sans-serif');
-    T('Super: '+g.super,guideX,controlsY+12+step*3,13,'#8be8ff','left','600 13px system-ui,sans-serif');
+    const g=playerControlGuide(0),step=H*.032,firstY=guideY+31;
+    T('Mover: '+introMovementText(0),guideX,firstY,10,'#8be8ff','left','600 10px system-ui,sans-serif');
+    T('Atirar: '+g.fire,guideX,firstY+step,10,'#8be8ff','left','600 10px system-ui,sans-serif');
+    T('Trocar Hubble/Roman: '+g.mode,guideX,firstY+step*2,10,'#8be8ff','left','600 10px system-ui,sans-serif');
+    T('Super: '+g.super,guideX,firstY+step*3,10,'#8be8ff','left','600 10px system-ui,sans-serif');
   }else{
     const g1=playerControlGuide(0),g2=playerControlGuide(1);
-    let y=controlsY;
-    y=WR('P1 (Laranja): '+g1.move+' (Mover), '+g1.fire+' (Atirar), '+g1.mode+' (Trocar), '+g1.super+' (Super)',guideX,y,guideW,H*.032,11,'#ff9a47')+2;
-    y=WR('P2 (Verde): '+g2.move+' (Mover), '+g2.fire+' (Atirar), '+g2.mode+' (Trocar), '+g2.super+' (Super)',guideX,y,guideW,H*.032,11,'#4fd8c4')+1;
-    WR('Pontos: Dano +100 | Asteroide +200 | K.O. Bonus +2000 | Combo (1.5x, 2x, 3x)',guideX,y,guideW,H*.03,11,'#ffd34d');
+    let y=guideY+15;
+    y=WR('P1 (Laranja): Mover '+introMovementText(0)+' · Atirar '+g1.fire+' · Trocar '+g1.mode+' · Super '+g1.super,guideX,y,guideW,11,9,'#ff9a47')+2;
+    y=WR('P2 (Verde): Mover '+introMovementText(1)+' · Atirar '+g2.fire+' · Trocar '+g2.mode+' · Super '+g2.super,guideX,y,guideW,11,9,'#4fd8c4')+1;
+    WR('Pontos: Dano +100 | Asteroide +200 | K.O. Bonus +2000 | Combo (1.5x, 2x, 3x)',guideX,y,guideW,11,9,'#ffd34d');
   }
   T(useGamepadHints()?controllerActionName('confirm')+' / '+controllerActionName('pause')+' PARA COMEÇAR':lastInputDevice==='touch'?'TOQUE PARA COMEÇAR':'ENTER PARA COMEÇAR',W/2,H-72,20,'#ffe08a','center','700 20px system-ui,sans-serif');
 }
@@ -1232,15 +1240,15 @@ function drawSettings(){
 
     const actions=[['up','MOVER ↑'],['down','MOVER ↓'],['left','MOVER ←'],['right','MOVER →'],['fire','DISPARO'],['super','SUPER'],['mode','TROCAR TELESCÓPIO'],['confirm','CONFIRMAR'],['pause','PAUSAR'],['back','VOLTAR']];
     const layout={up:[0,0],down:[1,0],left:[0,1],right:[1,1],fire:[0,2],super:[1,2],mode:[0,3],confirm:[1,3],pause:[0,4],back:[1,4]};
-    const colX=[W*.285,W*.615],actionY=H*.395,rowStep=H*.065,buttonW=W*.30,buttonH=30;
-    T('MOVIMENTO',W*.60,H*.37,10,'#8be8ff','center','700 10px system-ui,sans-serif');
-    T('AÇÕES DA MISSÃO',W*.60,H*.535,10,'#ffcf8a','center','700 10px system-ui,sans-serif');
+    const colX=[W*.285,W*.615],actionY=H*.41,rowStep=H*.065,buttonW=W*.30,buttonH=30;
+    T('MOVIMENTO',W*.60,H*.385,10,'#8be8ff','center','700 10px system-ui,sans-serif');
+    T('AÇÕES DA MISSÃO',W*.60,H*.565,10,'#ffcf8a','center','700 10px system-ui,sans-serif');
     actions.forEach(([action,label],i)=>{
-      const pos=layout[action],col=pos[0],row=pos[1],x=colX[col],y=row<2?actionY+row*rowStep:H*.56+(row-2)*rowStep;
+      const pos=layout[action],col=pos[0],row=pos[1],x=colX[col],y=row<2?actionY+row*rowStep:H*.59+(row-2)*rowStep;
       const waiting=remapPending?.player===controlPlayer&&remapPending.action===action;
       drawControlRemapButton('settings:bind:'+controlPlayer+':'+action,label,bindings[action],pad,x,y,buttonW,buttonH,menuCursor===4+i,waiting);
     });
-    T(waitingForInput?'PRESSIONE O BOTÃO DESEJADO · ESC CANCELA':'SELECIONE UMA AÇÃO PARA REMAPEAR · ANALÓGICO ESQUERDO MANTIDO',W*.60,H*.79,10,waitingForInput?'#ffe08a':'#cbd7ed','center','600 10px system-ui,sans-serif');
+    T(waitingForInput?'PRESSIONE O BOTÃO DESEJADO · ESC CANCELA':'SELECIONE UMA AÇÃO PARA REMAPEAR · ANALÓGICO ESQUERDO MANTIDO',W*.60,H*.80,10,waitingForInput?'#ffe08a':'#cbd7ed','center','600 10px system-ui,sans-serif');
     drawMenuButton('settings:controls:reset','PADRÕES',W*.20,H*.83,W*.25,36,menuCursor===14,true);
     drawMenuButton('settings:back','VOLTAR',W*.55,H*.83,W*.25,36,menuCursor===15,true);
     return;
@@ -1299,7 +1307,7 @@ function drawQuit(){
 
 function drawFocusMinigame(){
   const f=focusMinigame;if(!f?.active)return;
-  const px=W*.775,py=82,pw=180,ph=430,trackX=px+32,trackY=158,trackH=246,trackW=42,half=f.zoneHeight/2;
+  const px=12,py=82,pw=180,ph=430,trackX=px+32,trackY=158,trackH=246,trackW=42,half=f.zoneHeight/2;
   const aligned=Math.abs(f.focusY-f.targetY)<half-7;
   X.save();roundedPanelPath(px,py,pw,ph,15);X.fillStyle='rgba(5,10,28,.88)';X.fill();X.strokeStyle='rgba(139,232,255,.7)';X.lineWidth=1.5;X.stroke();
   T('FOCO FINAL',px+pw/2,py+28,18,'#ffb15c','center','700 18px system-ui,sans-serif');
@@ -1343,6 +1351,40 @@ function drawRewardNotice(){
   const buttonW=Math.min(boxW*.52,420),buttonH=42;
   drawMenuButton('reward:continue',continueControlText(),W/2-buttonW/2,y+boxH-buttonH-14,buttonW,buttonH,true,true);
 }
+function drawPlayerHudCard(p,i,focusLayout=false){
+  const color=p.col||'#8be8ff',player='P'+(i+1),health=p.alive?'♥'.repeat(Math.max(0,p.hp)):'✖';
+  const assignedPad=nP===1&&i===0&&!getController(0)?.connected&&getController(1)?.connected?getController(1):getController(i);
+  const score='PTS: '+p.score+' · '+p.multiplier.toFixed(1)+'x';
+  if(focusLayout){
+    const x=202,y=10+i*52,w=152,h=48;
+    X.save();roundedPanelPath(x,y,w,h,7);X.fillStyle='rgba(5,10,28,.92)';X.fill();X.strokeStyle=color;X.lineWidth=1.4;X.stroke();
+    X.fillStyle=color;X.fillRect(x+5,y+7,2,h-14);
+    T(player,x+10,y+13,10,color,'left','700 10px system-ui,sans-serif');
+    X.font='12px Georgia,serif';X.textAlign='left';X.fillStyle=p.alive?'#ff5a6a':'#8a8492';X.fillText(health,x+31,y+14);
+    T(assignedPad?.connected?'PAD':lastInputDevice==='touch'?'TOQUE':'TECLADO',x+114,y+13,7,'#a9b6d2','left','700 7px system-ui,sans-serif');
+    T(score,x+8,y+27,8,'#ffd34d','left','700 8px system-ui,sans-serif');
+    T(p.mode?'ROMAN':'HUBBLE',x+8,y+42,8,'#efe2c2','left','700 8px system-ui,sans-serif');
+    T('SUP',x+47,y+42,7,'#cbd7ed','left','700 7px system-ui,sans-serif');
+    for(let k=0;k<5;k++){X.fillStyle=k<p.ex?'#ff7ad9':'rgba(255,255,255,.20)';X.fillRect(x+66+k*6,y+36,5,5)}
+    if(p.boost>0)T('BOOST',x+92,y+42,7,'#8be8ff','left','700 7px system-ui,sans-serif');
+    if(p.shield>0)T('SHIELD',x+117,y+42,7,'#ffd34d','left','700 7px system-ui,sans-serif');
+    X.restore();return;
+  }
+  const x=14,y=10+i*53,w=332,h=48;
+  X.save();roundedPanelPath(x,y,w,h,8);X.fillStyle='rgba(5,10,28,.72)';X.fill();X.strokeStyle='rgba(139,232,255,.18)';X.lineWidth=1;X.stroke();
+  X.fillStyle=color;X.fillRect(x+1,y+8,3,h-16);
+  T('JOGADOR '+(i+1)+' · '+player,x+10,y+17,10,color,'left','700 10px system-ui,sans-serif');
+  X.font='17px Georgia,serif';X.textAlign='left';X.fillStyle=p.alive?'#ff5a6a':'#8a8492';X.fillText(health,x+100,y+18);
+  T(score,x+178,y+17,10,'#ffd34d','left','700 10px system-ui,sans-serif');
+  T('SUPER',x+10,y+39,8,'#cbd7ed','left','700 8px system-ui,sans-serif');
+  for(let k=0;k<5;k++){X.fillStyle=k<p.ex?'#ff7ad9':'rgba(255,255,255,.20)';X.fillRect(x+49+k*10,y+33,8,6)}
+  T(p.mode?'ROMAN':'HUBBLE',x+105,y+39,10,'#efe2c2','left','700 10px system-ui,sans-serif');
+  if(p.boost>0)T('SPEED',x+177,y+39,8,'#8be8ff','left','700 8px system-ui,sans-serif');
+  if(p.shield>0)T('SHIELD',x+232,y+39,8,'#ffd34d','left','700 8px system-ui,sans-serif');
+  const inputBadge=assignedPad?.connected?'CONTROLE':lastInputDevice==='touch'?'TOQUE':'TECLADO';
+  T(inputBadge,x+278,y+39,7,'#a9b6d2','left','700 7px system-ui,sans-serif');
+  X.restore();
+}
 function hud(){
   if(['splash','mainmenu','modes','diff','codex','quit'].includes(scene)||(scene==='settings'&&previousScene==='mainmenu'))drawMenuBackdrop();
   if(scene==='splash'){drawSplash();return}
@@ -1357,18 +1399,9 @@ function hud(){
   if(scene=='intro'){drawPhaseIntro();return}
   if(scene=='ready'){T('ALVO '+(currentBossIndex+1)+' / '+BOSSES.length,W/2,H*.34,20,'#8be8ff','center','600 20px system-ui,sans-serif');T(BOSSES[currentBossIndex].name,W/2,H*.47,33,'#ffe08a','center');if(tm<.8)T('OBSERVAR!',W/2,H*.63,55,'#ff9a47','center');return}
   
-  // HUD EM JOGO (SOLO, CO-OP E VERSUS)
-  P.forEach((p,i)=>{
-    const y=34+i*52,c=p.col;T('P'+(i+1),18,y,18,c);
-    X.font='20px Georgia,serif';X.fillStyle=p.alive?'#ff5a6a':'#777';X.textAlign='left';X.fillText(p.alive?'♥'.repeat(p.hp):'✖',64,y);
-    for(let k=0;k<5;k++){X.fillStyle=k<p.ex?'#ff7ad9':'rgba(255,255,255,.2)';X.fillRect(18+k*16,y+8,12,8)}
-    T(p.mode?'ROMAN':'HUBBLE',100+0,y+24,12,'#efe2c2');
-    if(p.boost>0) T('SPEED!', 160, y+24, 11, '#8be8ff');
-    if(p.shield>0) T('SHIELD!', 215, y+24, 11, '#ffd34d');
-    
-    // EXIBE PONTUAÇÃO E MULTIPLICADOR DE COMBO
-    T('PTS: '+p.score+' ('+p.multiplier.toFixed(1)+'x)', 270, y+24, 12, '#ffd34d');
-  });
+  // Cartões identificados mantêm os dados de cada piloto agrupados.
+  const focusHudLayout=!!focusMinigame?.active;
+  P.forEach((p,i)=>drawPlayerHudCard(p,i,focusHudLayout));
 
   if(combo)T('ALINHADOS! TIRO COMBINADO DE ALTO DANO',W/2,H-60,18,'#8be8ff','center');
   const bw=380,bx=W/2-bw/2+70;X.fillStyle='rgba(0,0,0,.5)';X.fillRect(bx,16,bw,14);X.fillStyle='#ff9a47';X.fillRect(bx,16,bw*cl(B.hp/B.max,0,1),14);X.strokeStyle='#efe2c2';X.lineWidth=2;X.strokeRect(bx,16,bw,14);

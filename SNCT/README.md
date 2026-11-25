@@ -224,3 +224,11 @@ Arquivos alterados: js/game.js, os oito recortes em assets/sprites/ e este READM
 ### 21. Espaçamento da aba de controle
 
 Após a captura do usuário, os títulos “MOVIMENTO” e “AÇÕES DA MISSÃO” foram reposicionados para não invadir as abas Player 1/Player 2 nem encostar nas linhas de remapeamento. A grade foi deslocada para baixo, preservando o espaçamento entre os botões, e a instrução de remapeamento foi reposicionada acima das ações Padrões e Voltar. Nenhum controle, ação ou regra de remapeamento foi alterado.
+
+### 22. Separação do briefing, Foco Final à esquerda e HUD por jogador
+
+A foto de Nancy agora termina antes da faixa de comandos do briefing. Os comandos ficam em uma coluna própria, separados da foto e do relatório. Movimento mostra as setas direcionais e, conforme o dispositivo ativo, WASD, toque ou analógico; disparo, troca de telescópio e super continuam exibindo os nomes/símbolos já detectados para o controle conectado.
+
+Na aba de controle, os cabeçalhos dos grupos foram afastados das abas de jogador e das linhas de remapeamento. As quatro direções continuam identificadas por setas, e cada ação mantém seu comando atribuído e os estados de seleção/espera.
+
+O painel Foco Final foi movido para a esquerda, sem mudar coordenadas da faixa, progresso, tempo ou entrada. Enquanto ele está ativo, os cartões dos jogadores ficam no alto ao lado do painel, deixando o feixe e o alvo visíveis. A HUD agora agrupa P1 e P2 em cartões identificados, relacionando vidas, pontos e multiplicador, telescópio, super, bônus ativos e estado do dispositivo conectado. Nenhuma regra de jogo foi alterada.
